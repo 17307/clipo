@@ -45,7 +45,7 @@ struct ClipCarouselView: View {
                                     }
                                 )
                                 .contextMenu {
-                                    Button("Paste") { state.paste(item) }
+                                    Button("Paste as Plain Text") { state.pasteAsPlainText(item) }
                                     Button("Paste with Formatting") { state.pasteWithFormatting(item) }
                                     Button("Copy Again") {
                                         ClipboardEngine.shared.copy(item)
@@ -137,7 +137,7 @@ struct ClipCarouselView: View {
     @ViewBuilder
     private func scriptMenu(for item: ClipItem) -> some View {
         let disabled = Defaults[.disabledScriptIDs]
-        let enabled = ScriptLoader.loadAll().filter { !disabled.contains($0.id) }
+        let enabled = state.scripts.filter { !disabled.contains($0.id) }
         Menu("Run Script") {
             if enabled.isEmpty {
                 Text("No enabled scripts")

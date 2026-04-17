@@ -19,6 +19,19 @@ final class AppState {
     /// Used to show ⌥1–⌥9 quick-paste badges over each card.
     var isOptionDown: Bool = false
 
+    /// Cached script list. Loaded once at launch (plus on-demand refresh
+    /// from the Scripts settings pane) so the right-click menu doesn't hit
+    /// disk on every open.
+    var scripts: [ClipoScript] = []
+
+    /// Reflects `AXIsProcessTrusted()` — driven by `recheckAccessibility()`
+    /// on every panel open. When false, RootView shows a persistent banner.
+    var isAccessibilityGranted: Bool = Accessibility.isTrusted(prompt: false)
+
+    func recheckAccessibility() {
+        isAccessibilityGranted = Accessibility.isTrusted(prompt: false)
+    }
+
     /// Top-bar tab order: History, Images, Files, then user-defined Pinboards.
     var topBarFilters: [ClipFilter] {
         var list: [ClipFilter] = [.history, .images, .files]
@@ -189,6 +202,7 @@ final class AppState {
     }
 
     /// Default paste — honors `Defaults[.removeFormattingByDefault]`.
+    /// Used by keyboard Enter, ⌥1–⌥9, double-click, and status-menu triggers.
     func paste(_ item: ClipItem) {
         performPaste(item, removeFormatting: Defaults[.removeFormattingByDefault])
     }
@@ -196,6 +210,11 @@ final class AppState {
     /// Explicit override — always keeps formatting regardless of the default.
     func pasteWithFormatting(_ item: ClipItem) {
         performPaste(item, removeFormatting: false)
+    }
+
+    /// Explicit override — always strips formatting regardless of the default.
+    func pasteAsPlainText(_ item: ClipItem) {
+        performPaste(item, removeFormatting: true)
     }
 
     private func performPaste(_ item: ClipItem, removeFormatting: Bool) {
@@ -217,6 +236,13 @@ final class AppState {
         context.insert(board)
         try? context.save()
         refreshPinboards()
+    }
+
+    /// Reloads the script list from disk into the in-memory cache. Call at
+    /// launch, when the user clicks Reload in the Scripts settings pane,
+    /// and after editing/adding/removing .js files.
+    func refreshScripts() {
+        scripts = ScriptLoader.loadAll()
     }
 
     /// Installs the default "Important" pinboard on first launch. Runs once

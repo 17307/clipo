@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupDefaultsObservers()
         setupModifierTracking()
         BuiltInScripts.installIfNeeded()
+        AppState.shared.refreshScripts()
         AppState.shared.installDefaultPinboardsIfNeeded()
 
         // Prompt for Accessibility permission (required for CGEvent paste) on first launch.
@@ -161,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // selected when the panel last closed.
             AppState.shared.selectedID = AppState.shared.items.first?.id
             AppState.shared.openToken = UUID()
+            AppState.shared.recheckAccessibility()
             panel.open()
         }
     }

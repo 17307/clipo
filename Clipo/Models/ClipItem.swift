@@ -85,9 +85,32 @@ final class ClipItem {
     }
 
     var imageData: Data? { contentData([.tiff, .png, .jpeg, .heic]) }
+
+    // MARK: - Decoded-value caches
+    //
+    // Raw content `Data` is persisted by SwiftData. Decoding the same bytes
+    // into an `NSImage` or parsing `previewableText` runs every time a card
+    // re-renders, which gets expensive when scrolling a carousel of photos
+    // or long text blocks. These process-wide NSCaches survive for the
+    // lifetime of the ClipItem (keyed by its UUID) and let NSCache evict
+    // automatically under memory pressure.
+    private static let imageCache: NSCache<NSUUID, NSImage> = {
+        let c = NSCache<NSUUID, NSImage>()
+        c.countLimit = 200
+        return c
+    }()
+    private static let textCache: NSCache<NSUUID, NSString> = {
+        let c = NSCache<NSUUID, NSString>()
+        c.countLimit = 500
+        return c
+    }()
+
     var image: NSImage? {
-        guard let data = imageData else { return nil }
-        return NSImage(data: data)
+        let key = id as NSUUID
+        if let cached = Self.imageCache.object(forKey: key) { return cached }
+        guard let data = imageData, let img = NSImage(data: data) else { return nil }
+        Self.imageCache.setObject(img, forKey: key)
+        return img
     }
 
     var fileURLs: [URL] {
@@ -104,15 +127,21 @@ final class ClipItem {
     }
 
     var previewableText: String {
-        if !fileURLs.isEmpty {
-            return fileURLs
-                .compactMap { $0.absoluteString.removingPercentEncoding }
-                .joined(separator: "\n")
-        }
-        if let text, !text.isEmpty { return text }
-        if let rtf, !rtf.string.isEmpty { return rtf.string }
-        if let html, !html.string.isEmpty { return html.string }
-        return title
+        let key = id as NSUUID
+        if let cached = Self.textCache.object(forKey: key) { return cached as String }
+        let result: String = {
+            if !fileURLs.isEmpty {
+                return fileURLs
+                    .compactMap { $0.absoluteString.removingPercentEncoding }
+                    .joined(separator: "\n")
+            }
+            if let text, !text.isEmpty { return text }
+            if let rtf, !rtf.string.isEmpty { return rtf.string }
+            if let html, !html.string.isEmpty { return html.string }
+            return title
+        }()
+        Self.textCache.setObject(result as NSString, forKey: key)
+        return result
     }
 
     func generateTitle() -> String {

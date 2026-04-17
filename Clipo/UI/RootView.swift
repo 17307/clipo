@@ -26,6 +26,13 @@ struct RootView: View {
                     .padding(.top, DesignTokens.panelTopPadding)
                     .padding(.bottom, 10)
 
+                if !state.isAccessibilityGranted {
+                    AccessibilityBanner()
+                        .padding(.horizontal, DesignTokens.panelHorizontalPadding)
+                        .padding(.bottom, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
                 ClipCarouselView(focus: $focus)
 
                 if showFooterHints {
@@ -287,6 +294,71 @@ private struct FooterHintBar: View {
                 Text(label)
             }
         }
+    }
+}
+
+// MARK: - Accessibility permission banner
+
+private struct AccessibilityBanner: View {
+    @Environment(AppState.self) private var state
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.white)
+                .font(.system(size: 13, weight: .semibold))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Accessibility permission is required")
+                    .font(DesignTokens.rounded(12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text("Paste into other apps won't work until Clipo is enabled in System Settings.")
+                    .font(DesignTokens.rounded(10.5))
+                    .foregroundStyle(.white.opacity(0.92))
+            }
+            Spacer()
+            Button {
+                Accessibility.openSystemSettings()
+            } label: {
+                Text("Open Settings")
+                    .font(DesignTokens.rounded(11, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule().fill(Color.white.opacity(0.22))
+                    )
+                    .overlay(
+                        Capsule().strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5)
+                    )
+            }
+            .buttonStyle(.plain)
+            .pointingHand()
+
+            Button {
+                state.recheckAccessibility()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(6)
+                    .background(Circle().fill(Color.white.opacity(0.18)))
+            }
+            .buttonStyle(.plain)
+            .pointingHand()
+            .help("Re-check permission")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "#FF8F3A") ?? .orange, Color(hex: "#FF5E3A") ?? .red],
+                        startPoint: .leading, endPoint: .trailing
+                    )
+                )
+                .shadow(color: Color.orange.opacity(0.30), radius: 6, x: 0, y: 2)
+        )
     }
 }
 

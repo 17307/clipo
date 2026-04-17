@@ -9,8 +9,11 @@ struct ClipCardView: View {
 
     @State private var isHovering = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(AppState.self) private var state
     @Default(.accentColorHex) private var accentHex
+
+    // Intentionally NOT subscribing to AppState here — `isOptionDown`'s
+    // cascading observation used to re-render every visible card. Only the
+    // nested `IndexBadge` view watches that flag now.
 
     private var accent: Color { Color(hex: accentHex) ?? DesignTokens.accent }
 
@@ -44,7 +47,6 @@ struct ClipCardView: View {
         )
         .animation(reduceMotion ? nil : DesignTokens.selectSpring, value: isSelected)
         .animation(reduceMotion ? nil : DesignTokens.hoverAnim, value: isHovering)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: state.isOptionDown)
         .onHover { isHovering = $0 }
         .pointingHand()
     }
@@ -80,11 +82,10 @@ private struct CardHeader: View {
     let index: Int
 
     @Default(.showSourceIcon) private var showSourceIcon
-    @Default(.accentColorHex) private var accentHex
-    @Environment(AppState.self) private var state
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var accent: Color { Color(hex: accentHex) ?? DesignTokens.accent }
+    // Does NOT read AppState. `isOptionDown` changes are isolated to
+    // `IndexBadge` so CardHeader itself doesn't re-render each time Option
+    // is pressed.
 
     var body: some View {
         HStack(spacing: 7) {
@@ -103,40 +104,11 @@ private struct CardHeader: View {
             }
             Spacer(minLength: 4)
             if index <= 9 {
-                indexBadge
+                IndexBadge(index: index)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: state.isOptionDown)
-    }
-
-    @ViewBuilder
-    private var indexBadge: some View {
-        if state.isOptionDown {
-            // Prominent state: accent capsule with ⌥ prefix.
-            HStack(spacing: 1) {
-                Text("⌥")
-                    .font(.system(size: 9, weight: .bold, design: .rounded))
-                Text("\(index)")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 5)
-            .frame(height: 18)
-            .background(
-                Capsule()
-                    .fill(accent.gradient)
-                    .shadow(color: .black.opacity(0.18), radius: 2, x: 0, y: 1)
-            )
-        } else {
-            // Default state: subtle numeric circle.
-            Text("\(index)")
-                .font(DesignTokens.rounded(9, weight: .bold))
-                .foregroundStyle(DesignTokens.TextColor.secondary)
-                .frame(width: 15, height: 15)
-                .background(Circle().fill(Color.black.opacity(0.08)))
-        }
     }
 
     private var relativeTime: String {
@@ -164,13 +136,55 @@ private struct CardHeader: View {
         return FileManager.default.displayName(atPath: url.path)
     }
 
-    private static func icon(for bundle: String?) -> NSImage? {
+    fileprivate static func icon(for bundle: String?) -> NSImage? {
         guard let bundle, let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle) else {
             return nil
         }
         let img = NSWorkspace.shared.icon(forFile: url.path)
         img.size = NSSize(width: 20, height: 20)
         return img
+    }
+}
+
+// MARK: - Index badge (subscribes to AppState.isOptionDown in isolation)
+
+private struct IndexBadge: View {
+    let index: Int
+
+    @Environment(AppState.self) private var state
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Default(.accentColorHex) private var accentHex
+
+    private var accent: Color { Color(hex: accentHex) ?? DesignTokens.accent }
+
+    var body: some View {
+        Group {
+            if state.isOptionDown {
+                // Prominent state: accent capsule with ⌥ prefix.
+                HStack(spacing: 1) {
+                    Text("⌥")
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                    Text("\(index)")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 5)
+                .frame(height: 18)
+                .background(
+                    Capsule()
+                        .fill(accent.gradient)
+                        .shadow(color: .black.opacity(0.18), radius: 2, x: 0, y: 1)
+                )
+            } else {
+                // Default state: subtle numeric circle.
+                Text("\(index)")
+                    .font(DesignTokens.rounded(9, weight: .bold))
+                    .foregroundStyle(DesignTokens.TextColor.secondary)
+                    .frame(width: 15, height: 15)
+                    .background(Circle().fill(Color.black.opacity(0.08)))
+            }
+        }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: state.isOptionDown)
     }
 }
 

@@ -4,7 +4,9 @@ import SwiftUI
 
 struct ScriptsPane: View {
     @Default(.disabledScriptIDs) private var disabled
-    @State private var scripts: [ClipoScript] = ScriptLoader.loadAll()
+    @State private var scripts: [ClipoScript] = AppState.shared.scripts.isEmpty
+        ? ScriptLoader.loadAll()
+        : AppState.shared.scripts
     @State private var showDocs = false
 
     var body: some View {
@@ -134,7 +136,8 @@ struct ScriptsPane: View {
     }
 
     private func reload() {
-        scripts = ScriptLoader.loadAll()
+        AppState.shared.refreshScripts()
+        scripts = AppState.shared.scripts
     }
 
     private func revealFile(for script: ClipoScript) {
