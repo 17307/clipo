@@ -207,7 +207,36 @@ final class IPCServer: @unchecked Sendable {
             "last_copied_at": iso.string(from: item.lastCopiedAt),
             "number_of_copies": item.numberOfCopies,
         ]
-        if let t = item.text { dict["text"] = t }
+
+        // File items: include explicit POSIX paths both as `files[]` (for
+        // scripts) and joined into `text` (matches what the UI "paste"
+        // would deliver to the target app: full paths, one per line).
+        if !item.fileURLs.isEmpty {
+            let paths = item.fileURLs.map(\.path)
+            dict["files"] = paths
+            dict["text"] = paths.joined(separator: "\n")
+        } else if let t = item.text, !t.isEmpty {
+            dict["text"] = t
+        } else if item.primaryKind == .text || item.primaryKind == .url || item.primaryKind == .color {
+            // Fall back to previewableText (rtf/html string forms) when
+            // there's no plain string payload.
+            let p = item.previewableText
+            if !p.isEmpty { dict["text"] = p }
+        }
+
+        // Image items: expose dimensions so CLI consumers can tell an image
+        // is on the clipboard even without pulling the raw bytes. If no
+        // other text representation exists we also fill `text` with a
+        // human-readable placeholder.
+        if let img = item.image {
+            let w = Int(img.size.width)
+            let h = Int(img.size.height)
+            dict["image"] = ["width": w, "height": h]
+            if dict["text"] == nil {
+                dict["text"] = "[image \(w)x\(h)]"
+            }
+        }
+
         if let app = item.sourceAppBundleID { dict["source_app"] = app }
         if let pb = item.pinboard?.name { dict["pinboard"] = pb }
         return ["ok": true, "data": dict]
