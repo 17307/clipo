@@ -193,40 +193,24 @@ final class IPCServer: @unchecked Sendable {
     }
 
     @MainActor
-    private static func handleRead(args: [String: Any]) -> [String: Any] {
-        let limit = (args["limit"] as? Int) ?? 10
-        let filterString = (args["filter"] as? String) ?? "history"
-        let iso = ISO8601DateFormatter()
-
-        let targetItems: [ClipItem] = {
-            switch filterString {
-            case "history":
-                return AppState.shared.items
-            case "images":
-                return AppState.shared.items.filter { $0.primaryKind == .image }
-            case "files":
-                return AppState.shared.items.filter { $0.primaryKind == .file }
-            default:
-                return AppState.shared.items
-            }
-        }()
-
-        let sliced = Array(targetItems.prefix(max(0, limit)))
-        let encoded: [[String: Any]] = sliced.map { item in
-            var dict: [String: Any] = [
-                "id": item.id.uuidString,
-                "kind": String(describing: item.primaryKind),
-                "first_copied_at": iso.string(from: item.firstCopiedAt),
-                "last_copied_at": iso.string(from: item.lastCopiedAt),
-                "number_of_copies": item.numberOfCopies,
-            ]
-            if let t = item.text { dict["text"] = String(t.prefix(10_000)) }
-            if let app = item.sourceAppBundleID { dict["source_app"] = app }
-            if let pb = item.pinboard?.name { dict["pinboard"] = pb }
-            return dict
+    private static func handleRead(args _: [String: Any]) -> [String: Any] {
+        // Return only the current (top-of-history) item — the thing the
+        // system clipboard would paste right now.
+        guard let item = AppState.shared.items.first else {
+            return ["ok": true, "data": NSNull()]
         }
-
-        return ["ok": true, "data": ["items": encoded]]
+        let iso = ISO8601DateFormatter()
+        var dict: [String: Any] = [
+            "id": item.id.uuidString,
+            "kind": String(describing: item.primaryKind),
+            "first_copied_at": iso.string(from: item.firstCopiedAt),
+            "last_copied_at": iso.string(from: item.lastCopiedAt),
+            "number_of_copies": item.numberOfCopies,
+        ]
+        if let t = item.text { dict["text"] = t }
+        if let app = item.sourceAppBundleID { dict["source_app"] = app }
+        if let pb = item.pinboard?.name { dict["pinboard"] = pb }
+        return ["ok": true, "data": dict]
     }
 
     @MainActor

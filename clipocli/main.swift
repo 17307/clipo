@@ -35,9 +35,10 @@ func printUsage(to stream: FileHandle = FileHandle.standardError) {
 
         USAGE:
           clipocli health
-          clipocli read [--limit N] [--filter history|images|files]
+          clipocli read [--json]        # prints the current clipboard text
+                                        # (or the full JSON with --json)
           clipocli write <text>
-          clipocli write -                 # read text from stdin
+          clipocli write -              # read text from stdin
 
         EXIT CODES:
           0  success
@@ -175,30 +176,32 @@ func main() {
         printResponse(resp)
 
     case "read", "r":
-        var limit = 10
-        var filter = "history"
-        var i = 0
-        while i < rest.count {
-            let arg = rest[i]
+        var json = false
+        for arg in rest {
             switch arg {
-            case "--limit", "-n":
-                guard i + 1 < rest.count, let n = Int(rest[i + 1]) else {
-                    die("--limit requires an integer")
-                }
-                limit = n
-                i += 2
-            case "--filter", "-f":
-                guard i + 1 < rest.count else { die("--filter requires a value") }
-                filter = rest[i + 1]
-                i += 2
+            case "--json":
+                json = true
             case "--help", "-h":
                 printUsage(to: FileHandle.standardOutput); exit(0)
             default:
                 die("unknown flag: \(arg)")
             }
         }
-        let resp = sendRequest(["cmd": "read", "args": ["limit": limit, "filter": filter]])
-        printResponse(resp)
+        let resp = sendRequest(["cmd": "read"])
+        // Server errors still get the structured printer.
+        if !(resp["ok"] as? Bool ?? false) {
+            printResponse(resp); return
+        }
+        if json {
+            printResponse(resp); return
+        }
+        // Default behavior: print just the current clipboard text, like pbpaste.
+        if let data = resp["data"] as? [String: Any], let text = data["text"] as? String {
+            print(text)
+        } else {
+            // Empty history, or the current item has no text payload (e.g., image).
+            // Exit 0 with no output — matches `pbpaste` on non-text content.
+        }
 
     case "write", "w":
         let text: String
