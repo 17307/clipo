@@ -100,6 +100,14 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
     /// without calling `super` consumes the event.
     override func sendEvent(_ event: NSEvent) {
         if isPresented, event.type == .keyDown {
+            // Window-local configurable shortcuts (Copy Again / Paste
+            // variants). Match first — they may use ⇧⏎ / ⌥⏎ which would
+            // otherwise fall into the plain Return branch below.
+            let handled = MainActor.assumeIsolated {
+                AppState.shared.appDelegate?.handleWindowLocalShortcut(event) ?? false
+            }
+            if handled { return }
+
             // ⌥1–⌥9 → quick paste the Nth visible card, regardless of
             // whether the search field, the carousel, or neither has focus.
             if event.modifierFlags.contains(.option),

@@ -230,6 +230,18 @@ private struct SearchFieldView: View {
                     focus = .carousel
                     return .handled
                 }
+                .onKeyPress(.leftArrow) {
+                    // Only navigate cards when the search field is empty —
+                    // otherwise Left should move the text cursor as usual.
+                    guard state.searchQuery.isEmpty else { return .ignored }
+                    state.selectPrevious()
+                    return .handled
+                }
+                .onKeyPress(.rightArrow) {
+                    guard state.searchQuery.isEmpty else { return .ignored }
+                    state.selectNext()
+                    return .handled
+                }
             if !state.searchQuery.isEmpty {
                 Button {
                     state.searchQuery = ""

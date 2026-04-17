@@ -78,8 +78,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func makeMenu() -> NSMenu {
         let menu = NSMenu()
 
-        let show = menu.addItem(withTitle: "Show Clipo", action: #selector(openFromMenu), keyEquivalent: "v")
-        show.keyEquivalentModifierMask = [.command, .shift]
+        let show = menu.addItem(withTitle: "Show Clipo", action: #selector(openFromMenu), keyEquivalent: "")
+        show.setShortcut(for: .togglePanel)
         show.target = self
 
         menu.addItem(.separator())
@@ -99,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         return menu
     }
+
 
     @objc private func openFromMenu() { togglePanel() }
 
@@ -131,9 +132,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Global hotkey
 
     private func setupHotkey() {
+        // Only togglePanel is truly global — the others are window-local and
+        // matched inside BottomPanel.sendEvent so they don't eat keystrokes
+        // system-wide (which would break e.g. the ⌫ key in other apps).
         KeyboardShortcuts.onKeyUp(for: .togglePanel) { [weak self] in
             self?.togglePanel()
         }
+    }
+
+    /// Called by BottomPanel.sendEvent for every keyDown. Returns true if
+    /// the event matched one of our window-local shortcuts and was handled.
+    func handleWindowLocalShortcut(_ event: NSEvent) -> Bool {
+        guard let panel, panel.isPresented else { return false }
+        guard let incoming = KeyboardShortcuts.Shortcut(event: event) else { return false }
+        guard let item = AppState.shared.selectedItem ?? AppState.shared.items.first else {
+            return false
+        }
+        if incoming == KeyboardShortcuts.getShortcut(for: .copyAgain) {
+            AppState.shared.copyAgain(item)
+            return true
+        }
+        if incoming == KeyboardShortcuts.getShortcut(for: .pastePlain) {
+            AppState.shared.pasteAsPlainText(item)
+            return true
+        }
+        if incoming == KeyboardShortcuts.getShortcut(for: .pasteFormatted) {
+            AppState.shared.pasteWithFormatting(item)
+            return true
+        }
+        return false
     }
 
     // MARK: - Panel
@@ -163,6 +190,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             AppState.shared.selectedID = AppState.shared.items.first?.id
             AppState.shared.openToken = UUID()
             AppState.shared.recheckAccessibility()
+            // Re-sync Option-down state — the flagsChanged monitor only fires
+            // while our window is key, so a user who released Option while
+            // the panel was closed would otherwise come back to stale badges.
+            AppState.shared.isOptionDown = NSEvent.modifierFlags.contains(.option)
             panel.open()
         }
     }
@@ -238,14 +269,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
 
-    /// Called by PreviewPanel when it lost key to some other window without an
-    /// explicit close() call. If the new key is our main panel (user clicked
-    /// a card), keep main open. Otherwise the user clicked outside Clipo
-    /// entirely — dismiss both windows.
+    /// Called by PreviewPanel when it lost key to some other window without
+    /// an explicit close() call. We only close the main panel if focus went
+    /// to a genuinely external window; a nil / transitional keyWindow or
+    /// our own main panel both keep main open (defaults to "safe").
     func previewLostFocus() {
-        let clickedMain = (NSApp.keyWindow === panel)
+        let newKey = NSApp.keyWindow
+        let isExternal = newKey != nil
+            && newKey !== panel
+            && newKey !== previewPanel
         previewPanel?.close()
-        if !clickedMain {
+        if isExternal {
             panel?.close()
         }
     }

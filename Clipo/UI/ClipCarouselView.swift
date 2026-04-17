@@ -1,4 +1,5 @@
 import Defaults
+import KeyboardShortcuts
 import SwiftUI
 
 struct ClipCarouselView: View {
@@ -6,6 +7,10 @@ struct ClipCarouselView: View {
     @FocusState.Binding var focus: PanelFocus?
 
     @State private var filterJustChanged = false
+    /// Tracks the searchQuery value at the time of the last selection scroll
+    /// so we can tell "user navigated within the same query" from "query
+    /// changed, treat this as a filter transition".
+    @State private var lastSearchQuery: String = ""
 
     /// Scroll-to sentinel ID for "the very start of the carousel".
     private static let startAnchorID = "__carousel_start"
@@ -45,11 +50,14 @@ struct ClipCarouselView: View {
                                     }
                                 )
                                 .contextMenu {
-                                    Button("Paste as Plain Text") { state.pasteAsPlainText(item) }
-                                    Button("Paste with Formatting") { state.pasteWithFormatting(item) }
-                                    Button("Copy Again") {
-                                        ClipboardEngine.shared.copy(item)
-                                        state.appDelegate?.closePanel()
+                                    Button(titled("Paste as Plain Text", shortcut: .pastePlain)) {
+                                        state.pasteAsPlainText(item)
+                                    }
+                                    Button(titled("Paste with Formatting", shortcut: .pasteFormatted)) {
+                                        state.pasteWithFormatting(item)
+                                    }
+                                    Button(titled("Copy Again", shortcut: .copyAgain)) {
+                                        state.copyAgain(item)
                                     }
                                     Divider()
                                     pinMenu(for: item)
@@ -61,7 +69,9 @@ struct ClipCarouselView: View {
                                     Divider()
                                     scriptMenu(for: item)
                                     Divider()
-                                    Button("Delete", role: .destructive) { state.delete(item) }
+                                    Button("Delete", role: .destructive) {
+                                        state.delete(item)
+                                    }
                                 }
                             }
                         }
@@ -72,6 +82,10 @@ struct ClipCarouselView: View {
                 // Force a fresh view hierarchy per filter so SwiftUI doesn't
                 // animate the diff between, e.g., History and Images.
                 .id(state.activeFilter)
+                // Suppress ForEach diff animations when items change due to
+                // the search query — filtering should feel instant, not have
+                // cards fly in/out on every keystroke.
+                .animation(nil, value: state.searchQuery)
             }
             .scrollIndicators(.hidden)
             .onChange(of: state.activeFilter) { _, _ in
@@ -82,10 +96,26 @@ struct ClipCarouselView: View {
                 // onChange below has had a chance to read it.
                 DispatchQueue.main.async { filterJustChanged = false }
             }
+            .onChange(of: state.openToken) { _, _ in
+                // Panel re-opened — items may have re-sorted (e.g. after
+                // paste bumped one to the top) but the ScrollView keeps its
+                // pixel offset. Snap back to the start.
+                filterJustChanged = true
+                proxy.scrollTo(Self.startAnchorID, anchor: .leading)
+                DispatchQueue.main.async { filterJustChanged = false }
+            }
             .onChange(of: state.selectedID) { _, new in
                 guard let new else { return }
                 if filterJustChanged {
                     // Filter just changed — scroll is handled above without animation.
+                    return
+                }
+                if state.searchQuery != lastSearchQuery {
+                    // Search text changed since the last selection scroll.
+                    // This selectedID change is part of a filter transition,
+                    // not manual navigation — snap to start without spring.
+                    lastSearchQuery = state.searchQuery
+                    proxy.scrollTo(Self.startAnchorID, anchor: .leading)
                     return
                 }
                 withAnimation(DesignTokens.selectSpring) {
@@ -110,16 +140,10 @@ struct ClipCarouselView: View {
                     }
                     return .handled
                 }
-                // 1-9 → quick paste the corresponding visible card.
-                if let d = char.wholeNumberValue, d >= 1, d <= 9 {
-                    state.selectByIndex(d - 1)
-                    state.pasteSelected()
-                    return .handled
-                }
-                // Any other printable char → switch to search field first, then
-                // inject the character asynchronously so the TextField has
-                // already taken focus before the observable value changes.
-                if char.isLetter || "-_.@/:".contains(char) {
+                // Any printable char (letters, digits, allowed punctuation)
+                // routes to the search field. Quick-paste is ⌥1–⌥9 only —
+                // plain digits type into search like any other key.
+                if char.isLetter || char.isNumber || "-_.@/:".contains(char) {
                     let chars = press.characters
                     focus = .search
                     DispatchQueue.main.async {
@@ -132,6 +156,15 @@ struct ClipCarouselView: View {
             }
         }
         .frame(height: DesignTokens.cardHeight + 24)
+    }
+
+    /// Suffix a menu item's title with the current binding's glyph so the
+    /// shortcut is visible right in the context menu (e.g. "Delete  ⌫").
+    /// Rebuilt whenever the menu opens, so Settings changes reflect live.
+    private func titled(_ title: String, shortcut name: KeyboardShortcuts.Name) -> String {
+        guard let s = KeyboardShortcuts.getShortcut(for: name) else { return title }
+        let glyph = s.description.trimmingCharacters(in: .whitespaces)
+        return glyph.isEmpty ? title : "\(title)  \(glyph)"
     }
 
     @ViewBuilder

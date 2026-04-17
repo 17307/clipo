@@ -14,8 +14,25 @@ struct GeneralPane: View {
                 LaunchAtLoginToggle()
             }
 
-            Section("Global hotkey") {
-                KeyboardShortcuts.Recorder("Show/Hide Clipo", name: .togglePanel)
+            Section("Global shortcut") {
+                LabeledContent("Show / Hide Clipo") {
+                    KeyboardShortcuts.Recorder(for: .togglePanel)
+                }
+            }
+
+            Section("Panel shortcuts") {
+                LabeledContent("Copy Again") {
+                    KeyboardShortcuts.Recorder(for: .copyAgain)
+                }
+                LabeledContent("Paste as Plain Text") {
+                    KeyboardShortcuts.Recorder(for: .pastePlain)
+                }
+                LabeledContent("Paste with Formatting") {
+                    KeyboardShortcuts.Recorder(for: .pasteFormatted)
+                }
+                Text("Active only while the Clipo panel is open — these shortcuts don't intercept keystrokes in other apps.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Paste") {

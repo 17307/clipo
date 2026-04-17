@@ -3,6 +3,7 @@ import Defaults
 import Foundation
 import Observation
 import SwiftData
+import SwiftUI
 
 @MainActor
 @Observable
@@ -142,18 +143,33 @@ final class AppState {
         }
 
         // Apply search
+        let nextItems: [ClipItem]
         if searchQuery.isEmpty {
-            items = filtered
+            nextItems = filtered
         } else {
             let q = searchQuery.lowercased()
-            items = filtered.filter { $0.title.lowercased().contains(q) }
+            nextItems = filtered.filter { $0.title.lowercased().contains(q) }
         }
 
-        // Keep selection valid
-        if let id = selectedID, !items.contains(where: { $0.id == id }) {
-            selectedID = items.first?.id
-        } else if selectedID == nil {
-            selectedID = items.first?.id
+        // Compute the next selectedID without mutating yet.
+        let nextSelected: UUID?
+        if let id = selectedID, nextItems.contains(where: { $0.id == id }) {
+            nextSelected = id
+        } else {
+            nextSelected = nextItems.first?.id
+        }
+
+        // Publish items / selection inside a transaction that disables
+        // implicit animations. SwiftUI's ForEach otherwise animates the
+        // diff (cards sliding into place) when the list re-sorts during
+        // a search or filter change.
+        var t = Transaction()
+        t.disablesAnimations = true
+        withTransaction(t) {
+            items = nextItems
+            if selectedID != nextSelected {
+                selectedID = nextSelected
+            }
         }
 
         refreshPinboards()
@@ -223,6 +239,7 @@ final class AppState {
     }
 
     private func performPaste(_ item: ClipItem, removeFormatting: Bool) {
+        bumpRecency(item)
         // 1. Stage the item on the system pasteboard BEFORE closing.
         ClipboardEngine.shared.copy(item, removeFormatting: removeFormatting)
         // 2. Close our panel instantly so the previous app regains keyboard focus.
@@ -231,6 +248,24 @@ final class AppState {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
             Paster.paste()
         }
+    }
+
+    /// Writes the item back to the system clipboard (without pasting) and
+    /// closes the panel. Used by the "Copy Again" menu item and the ⌥⏎
+    /// shortcut. The item is also promoted to the front of the MRU.
+    func copyAgain(_ item: ClipItem) {
+        bumpRecency(item)
+        ClipboardEngine.shared.copy(item)
+        appDelegate?.closePanel()
+    }
+
+    /// Promote an item to "most recent" status so it moves to the front of
+    /// the carousel after being used. Runs before every internal copy/paste.
+    private func bumpRecency(_ item: ClipItem) {
+        item.lastCopiedAt = .now
+        item.numberOfCopies += 1
+        try? context.save()
+        refresh()
     }
 
     // MARK: - Pinboard operations
