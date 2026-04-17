@@ -100,7 +100,7 @@ struct StoragePane: View {
 
     private func refreshStorageSize() {
         if let size = try? storageURL.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > 0 {
-            storageSize = ByteCountFormatter().string(fromByteCount: Int64(size))
+            storageSize = SharedFormatters.byteCount.string(fromByteCount: Int64(size))
         } else {
             storageSize = "—"
         }

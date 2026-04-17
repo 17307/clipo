@@ -112,10 +112,7 @@ private struct CardHeader: View {
     }
 
     private var relativeTime: String {
-        let fmt = RelativeDateTimeFormatter()
-        fmt.unitsStyle = .abbreviated
-        fmt.dateTimeStyle = .named
-        return fmt.localizedString(for: item.lastCopiedAt, relativeTo: .now)
+        SharedFormatters.relativeTime.localizedString(for: item.lastCopiedAt, relativeTo: .now)
     }
 
     @ViewBuilder
@@ -221,10 +218,7 @@ private struct CardFooter: View {
     }
 
     private var relativeTime: String {
-        let fmt = RelativeDateTimeFormatter()
-        fmt.unitsStyle = .abbreviated
-        fmt.dateTimeStyle = .named
-        return fmt.localizedString(for: item.lastCopiedAt, relativeTo: .now)
+        SharedFormatters.relativeTime.localizedString(for: item.lastCopiedAt, relativeTo: .now)
     }
 
     private var statText: String? {
@@ -408,7 +402,7 @@ private struct FileBody: View {
     @ViewBuilder
     private func fileIcon(for url: URL?) -> some View {
         if let url {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+            Image(nsImage: AppIconCache.icon(forFile: url, size: 40))
                 .resizable()
                 .aspectRatio(contentMode: .fit)
         } else {
@@ -423,7 +417,7 @@ private struct FileBody: View {
               let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize else {
             return nil
         }
-        return ByteCountFormatter().string(fromByteCount: Int64(size))
+        return SharedFormatters.byteCount.string(fromByteCount: Int64(size))
     }
 }
 

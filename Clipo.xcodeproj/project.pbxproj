@@ -16,6 +16,7 @@
 		50D1BC4FD3E899C02A9EE86E /* ScriptLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F5DFD89E8996C8057C0F8C7 /* ScriptLoader.swift */; };
 		54825FC496525EE64125C02B /* ClipboardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52C815B2FA6DC58FEFEEF1E9 /* ClipboardEngine.swift */; };
 		5A324279153217B5A0230F23 /* ClickCatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA07A0B1A3DEAC7138C3B0D7 /* ClickCatcher.swift */; };
+		5A7DADF7C0081C6DF046115F /* SharedFormatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D567CBE9A1F45C40841A221 /* SharedFormatters.swift */; };
 		63DF75707E0AC8360FAB649A /* VisualEffectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D34A4C2B311D48C89C8339DB /* VisualEffectView.swift */; };
 		6B3A37465D98A1630EDD2622 /* AppIconCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF6DF078F7F6C216E06B3AC /* AppIconCache.swift */; };
 		6E3D1DA0C43E7A6E8F4D1410 /* GeneralPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5F1B17F1D52F656B6F9AE0 /* GeneralPane.swift */; };
@@ -64,6 +65,7 @@
 		470C204D4FE9087FAF75FC80 /* GlobalHotkeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeys.swift; sourceTree = "<group>"; };
 		48B547A73E4658830E495ABE /* NSPasteboardType+Clipo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSPasteboardType+Clipo.swift"; sourceTree = "<group>"; };
 		4B5F1B17F1D52F656B6F9AE0 /* GeneralPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralPane.swift; sourceTree = "<group>"; };
+		4D567CBE9A1F45C40841A221 /* SharedFormatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFormatters.swift; sourceTree = "<group>"; };
 		52C815B2FA6DC58FEFEEF1E9 /* ClipboardEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardEngine.swift; sourceTree = "<group>"; };
 		58DCFDA0EB87CDC5890F15AA /* Paster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Paster.swift; sourceTree = "<group>"; };
 		5DDA2D46ED645424465E3FDD /* ClipCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipCardView.swift; sourceTree = "<group>"; };
@@ -202,6 +204,7 @@
 				3B3FA36E879E8EAA67F515DF /* PreviewPanel.swift */,
 				7DBAC5D5F6A9DCF981BB828D /* RootView.swift */,
 				E1404324EF8B2D1070E268B0 /* ScrollableTextView.swift */,
+				4D567CBE9A1F45C40841A221 /* SharedFormatters.swift */,
 				D34A4C2B311D48C89C8339DB /* VisualEffectView.swift */,
 				C2B715D8C4E40098FF78DCE9 /* Cards */,
 			);
@@ -396,6 +399,7 @@
 				B65F8429E750F4CCB7D65C5C /* ScriptsPane.swift in Sources */,
 				E203D245B2DA47E89ADBB629 /* ScrollableTextView.swift in Sources */,
 				D3845CD64270AEEB2B8463D6 /* SettingsWindowController.swift in Sources */,
+				5A7DADF7C0081C6DF046115F /* SharedFormatters.swift in Sources */,
 				EE00F95B15FA92F984FE148B /* Storage.swift in Sources */,
 				1DCDFB7E1167EAF6233747EC /* StoragePane.swift in Sources */,
 				D1D4C5DE96E1447CF683C711 /* String+Shortened.swift in Sources */,

@@ -229,9 +229,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Scripts
 
     func runScript(_ script: ClipoScript, on item: ClipItem) {
+        // Scripts only operate on textual input. Give a specific message per
+        // kind so the user knows why a particular item can't be transformed.
+        switch item.primaryKind {
+        case .image:
+            showScriptAlert(title: "\(script.name): cannot run on an image",
+                            message: "Scripts transform text. This item is an image.")
+            return
+        case .file:
+            showScriptAlert(title: "\(script.name): cannot run on a file item",
+                            message: "Scripts transform text. This item contains file references.")
+            return
+        default: break
+        }
         guard let input = item.text, !input.isEmpty else {
             showScriptAlert(title: "\(script.name): no text to transform",
-                            message: "This script needs a text item as input.")
+                            message: "This script needs non-empty text as input.")
             return
         }
         switch ScriptEngine.run(script, input: input) {

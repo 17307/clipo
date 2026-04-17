@@ -73,7 +73,7 @@ enum SettingsCategory: String, Hashable, CaseIterable, Identifiable {
         case .appearance: return "paintpalette.fill"
         case .storage:    return "externaldrive.fill"
         case .pinboards:  return "pin.fill"
-        case .scripts:    return "curlybraces"
+        case .scripts:    return "curlybraces.square.fill"
         case .ignore:     return "nosign"
         case .advanced:   return "wrench.and.screwdriver.fill"
         }

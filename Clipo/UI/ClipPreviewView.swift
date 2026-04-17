@@ -9,6 +9,11 @@ struct ClipPreviewView: View {
     @Default(.accentColorHex) private var accentHex
     private var accent: Color { Color(hex: accentHex) ?? DesignTokens.accent }
 
+    /// Cached app info so body re-renders don't re-query LaunchServices.
+    /// The preview is a single-item view — we can just compute once on
+    /// first appear.
+    @State private var cachedSourceApp: (name: String, icon: NSImage)?
+
     var body: some View {
         ZStack {
             VisualEffectView(material: .popover, blendingMode: .behindWindow)
@@ -17,21 +22,33 @@ struct ClipPreviewView: View {
 
             VStack(spacing: 0) {
                 header
-                Divider().opacity(0.25)
+                Divider().opacity(0.35)
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                Divider().opacity(0.25)
+                Divider().opacity(0.35)
                 footer
             }
         }
         .preferredColorScheme(.light)
+        .onAppear {
+            cachedSourceApp = Self.lookupSourceApp(item: item)
+        }
+    }
+
+    private static func lookupSourceApp(item: ClipItem) -> (name: String, icon: NSImage)? {
+        guard let id = item.sourceAppBundleID,
+              let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id),
+              let icon = AppIconCache.icon(forBundleID: id, size: 22) else {
+            return nil
+        }
+        return (FileManager.default.displayName(atPath: url.path), icon)
     }
 
     // MARK: - Header
 
     private var header: some View {
         HStack(spacing: 10) {
-            if let app = sourceAppInfo {
+            if let app = cachedSourceApp {
                 Image(nsImage: app.icon)
                     .resizable()
                     .frame(width: 22, height: 22)
@@ -227,7 +244,7 @@ struct ClipPreviewView: View {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(item.fileURLs, id: \.self) { url in
                     HStack(spacing: 10) {
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                        Image(nsImage: AppIconCache.icon(forFile: url, size: 24))
                             .resizable()
                             .frame(width: 24, height: 24)
                         VStack(alignment: .leading, spacing: 1) {
@@ -293,21 +310,8 @@ struct ClipPreviewView: View {
 
     // MARK: - Derived values
 
-    private var sourceAppInfo: (name: String, icon: NSImage)? {
-        guard let id = item.sourceAppBundleID,
-              let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id),
-              let icon = AppIconCache.icon(forBundleID: id, size: 22) else {
-            return nil
-        }
-        let name = FileManager.default.displayName(atPath: url.path)
-        return (name, icon)
-    }
-
     private var relativeTime: String {
-        let fmt = RelativeDateTimeFormatter()
-        fmt.unitsStyle = .full
-        fmt.dateTimeStyle = .named
-        return fmt.localizedString(for: item.lastCopiedAt, relativeTo: .now)
+        SharedFormatters.relativeTimeFull.localizedString(for: item.lastCopiedAt, relativeTo: .now)
     }
 
     private var typeLabelAndIcon: (String, String) {

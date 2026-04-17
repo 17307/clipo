@@ -37,7 +37,7 @@ final class PreviewPanel: NSPanel {
         container.layer?.cornerRadius = 22
         container.layer?.masksToBounds = true
         container.layer?.borderWidth = 0.5
-        container.layer?.borderColor = NSColor.black.withAlphaComponent(0.10).cgColor
+        container.layer?.borderColor = NSColor.black.withAlphaComponent(0.16).cgColor
         container.addSubview(host)
         NSLayoutConstraint.activate([
             host.leadingAnchor.constraint(equalTo: container.leadingAnchor),
