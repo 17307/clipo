@@ -120,7 +120,7 @@ private struct CardHeader: View {
 
     @ViewBuilder
     private var sourceIcon: some View {
-        if let img = Self.icon(for: item.sourceAppBundleID) {
+        if let img = AppIconCache.icon(forBundleID: item.sourceAppBundleID) {
             Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
         } else {
             Image(systemName: "app.dashed")
@@ -136,14 +136,6 @@ private struct CardHeader: View {
         return FileManager.default.displayName(atPath: url.path)
     }
 
-    fileprivate static func icon(for bundle: String?) -> NSImage? {
-        guard let bundle, let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle) else {
-            return nil
-        }
-        let img = NSWorkspace.shared.icon(forFile: url.path)
-        img.size = NSSize(width: 20, height: 20)
-        return img
-    }
 }
 
 // MARK: - Index badge (subscribes to AppState.isOptionDown in isolation)
@@ -331,6 +323,7 @@ private struct ColorBody: View {
     var body: some View {
         let text = (item.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let color = Color(hex: text) ?? .gray
+        let useWhiteText = ColorLuminance.isDark(hex: text)
         ZStack {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(color)
@@ -340,13 +333,36 @@ private struct ColorBody: View {
                 )
             Text(text.uppercased())
                 .font(DesignTokens.mono(13, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(useWhiteText ? .white : .black)
                 .tracking(0.8)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(Capsule().fill(Color.black.opacity(0.45)))
+                .shadow(color: (useWhiteText ? Color.black : Color.white).opacity(0.25), radius: 1, x: 0, y: 0)
         }
         .padding(10)
+    }
+}
+
+/// Helper: perceived luminance from a hex color. Used by color-preview
+/// cards to pick black vs white label text so hex codes stay readable on
+/// any background.
+enum ColorLuminance {
+    /// Returns true if the color should use white foreground text.
+    static func isDark(hex: String) -> Bool {
+        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.hasPrefix("#") { s.removeFirst() }
+        guard s.count == 6 || s.count == 8, let value = UInt64(s, radix: 16) else { return true }
+        let r, g, b: Double
+        if s.count == 8 {
+            r = Double((value >> 24) & 0xFF) / 255
+            g = Double((value >> 16) & 0xFF) / 255
+            b = Double((value >> 8) & 0xFF) / 255
+        } else {
+            r = Double((value >> 16) & 0xFF) / 255
+            g = Double((value >> 8) & 0xFF) / 255
+            b = Double(value & 0xFF) / 255
+        }
+        // Rec. 709 luma — same formula macOS uses for menu contrast.
+        let luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        return luma < 0.55
     }
 }
 

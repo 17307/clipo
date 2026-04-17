@@ -188,18 +188,23 @@ struct ClipCarouselView: View {
 }
 
 private struct EmptyCard: View {
+    @Default(.ignoreEvents) private var isPaused
+
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: "doc.on.clipboard")
+            Image(systemName: isPaused ? "pause.circle" : "doc.on.clipboard")
                 .font(.system(size: 28, weight: .regular))
-                .foregroundStyle(DesignTokens.TextColor.tertiary)
-            Text("Nothing copied yet")
+                .foregroundStyle(isPaused ? Color.orange.opacity(0.75) : DesignTokens.TextColor.tertiary)
+            Text(isPaused ? "Clipboard monitoring is paused" : "Nothing copied yet")
                 .font(DesignTokens.rounded(12, weight: .medium))
                 .foregroundStyle(DesignTokens.TextColor.secondary)
-            Text("Copy with ⌘C to get started")
+                .multilineTextAlignment(.center)
+            Text(isPaused ? "Resume in Settings → Advanced" : "Copy with ⌘C to get started")
                 .font(DesignTokens.rounded(10))
                 .foregroundStyle(DesignTokens.TextColor.tertiary)
+                .multilineTextAlignment(.center)
         }
+        .padding(.horizontal, 12)
         .frame(width: DesignTokens.cardWidth, height: DesignTokens.cardHeight)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)

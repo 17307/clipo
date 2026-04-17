@@ -157,13 +157,30 @@ final class ClipboardEngine {
         }
     }
 
+    // Compiled-regex cache. Defaults observer in AppDelegate clears it when
+    // the user edits the ignoreRegexp list. Without this we'd recompile
+    // every user pattern on every single poll tick (0.5s).
+    private var regexCache: [String: NSRegularExpression] = [:]
+
+    func invalidateRegexCache() { regexCache.removeAll(keepingCapacity: true) }
+
     private func shouldIgnore(_ item: NSPasteboardItem) -> Bool {
         guard let string = item.string(forType: .string) else { return false }
-        for pattern in Defaults[.ignoreRegexp] {
-            if let regex = try? NSRegularExpression(pattern: pattern) {
-                let range = NSRange(string.startIndex..., in: string)
-                if regex.numberOfMatches(in: string, range: range) > 0 { return true }
+        let patterns = Defaults[.ignoreRegexp]
+        guard !patterns.isEmpty else { return false }
+        for pattern in patterns {
+            let regex: NSRegularExpression?
+            if let cached = regexCache[pattern] {
+                regex = cached
+            } else if let compiled = try? NSRegularExpression(pattern: pattern) {
+                regexCache[pattern] = compiled
+                regex = compiled
+            } else {
+                regex = nil
             }
+            guard let regex else { continue }
+            let range = NSRange(string.startIndex..., in: string)
+            if regex.numberOfMatches(in: string, range: range) > 0 { return true }
         }
         return false
     }

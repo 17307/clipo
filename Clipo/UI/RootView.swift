@@ -57,12 +57,18 @@ struct RootView: View {
             return .handled
         }
         .onKeyPress { press in
-            // ⌘1-9 picks the Nth tab in the top filter bar.
-            if press.modifiers.contains(.command),
-               let c = press.characters.first,
-               let d = c.wholeNumberValue, d >= 1, d <= 9 {
-                state.selectFilterByIndex(d - 1)
-                return .handled
+            if press.modifiers.contains(.command) {
+                // ⌘, opens Settings
+                if press.characters == "," {
+                    state.appDelegate?.openSettings()
+                    return .handled
+                }
+                // ⌘1-9 picks the Nth tab in the top filter bar.
+                if let c = press.characters.first,
+                   let d = c.wholeNumberValue, d >= 1, d <= 9 {
+                    state.selectFilterByIndex(d - 1)
+                    return .handled
+                }
             }
             return .ignored
         }
@@ -235,6 +241,8 @@ private struct SearchFieldView: View {
                 }
                 .buttonStyle(.plain)
                 .pointingHand()
+                .accessibilityLabel("Clear search")
+                .help("Clear search")
             }
         }
         .padding(.horizontal, 10)

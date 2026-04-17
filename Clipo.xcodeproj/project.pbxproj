@@ -17,6 +17,7 @@
 		54825FC496525EE64125C02B /* ClipboardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52C815B2FA6DC58FEFEEF1E9 /* ClipboardEngine.swift */; };
 		5A324279153217B5A0230F23 /* ClickCatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA07A0B1A3DEAC7138C3B0D7 /* ClickCatcher.swift */; };
 		63DF75707E0AC8360FAB649A /* VisualEffectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D34A4C2B311D48C89C8339DB /* VisualEffectView.swift */; };
+		6B3A37465D98A1630EDD2622 /* AppIconCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF6DF078F7F6C216E06B3AC /* AppIconCache.swift */; };
 		6E3D1DA0C43E7A6E8F4D1410 /* GeneralPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5F1B17F1D52F656B6F9AE0 /* GeneralPane.swift */; };
 		7663237019E12F9AA1C690A6 /* NSPasteboardType+Clipo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B547A73E4658830E495ABE /* NSPasteboardType+Clipo.swift */; };
 		7C8E72067E4E0327B7CE9F5D /* PreviewPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3FA36E879E8EAA67F515DF /* PreviewPanel.swift */; };
@@ -72,6 +73,7 @@
 		72979EF484E426D26E0A7637 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		7721AC49BE856A5D11FFD701 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
 		7DBAC5D5F6A9DCF981BB828D /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		7DF6DF078F7F6C216E06B3AC /* AppIconCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconCache.swift; sourceTree = "<group>"; };
 		7F5DFD89E8996C8057C0F8C7 /* ScriptLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLoader.swift; sourceTree = "<group>"; };
 		812A14A88A78F239E61A16FB /* AdvancedPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedPane.swift; sourceTree = "<group>"; };
 		8DFF28B4DB3BB62BE4AE39D7 /* ClipItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipItem.swift; sourceTree = "<group>"; };
@@ -190,6 +192,7 @@
 		65814E4B577ABDF74FB15333 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				7DF6DF078F7F6C216E06B3AC /* AppIconCache.swift */,
 				057E3232452A09BC045F5C65 /* BottomPanel.swift */,
 				AA07A0B1A3DEAC7138C3B0D7 /* ClickCatcher.swift */,
 				5DDA2D46ED645424465E3FDD /* ClipCardView.swift */,
@@ -359,6 +362,7 @@
 				EA128574AD8FA5C3321609A8 /* Accessibility.swift in Sources */,
 				F9698A032B2181163345DBAF /* AdvancedPane.swift in Sources */,
 				1E701EE77849E496A119CA2F /* AppDelegate.swift in Sources */,
+				6B3A37465D98A1630EDD2622 /* AppIconCache.swift in Sources */,
 				E5EF95D474EA1ABC3FB8B17D /* AppState.swift in Sources */,
 				AC29F75B30B999F905400535 /* AppearancePane.swift in Sources */,
 				F87038C5A2D3189B65B1E2FF /* BottomPanel.swift in Sources */,

@@ -74,8 +74,13 @@ final class AppState {
     // MARK: - History operations
 
     func add(_ item: ClipItem) {
-        // Dedup — if an existing item supersedes the new one, just bump its lastCopiedAt.
-        let descriptor = FetchDescriptor<ClipItem>()
+        // Dedup — if an existing recent item supersedes the new one, just
+        // bump its lastCopiedAt. Only scan the most-recent window so we
+        // don't pull the whole history on every paste in a large DB.
+        var descriptor = FetchDescriptor<ClipItem>(
+            sortBy: [SortDescriptor(\.lastCopiedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 50
         if let existing = (try? context.fetch(descriptor))?.first(where: { $0.supersedes(item) }) {
             existing.lastCopiedAt = .now
             existing.numberOfCopies += 1

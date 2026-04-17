@@ -199,7 +199,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func runScript(_ script: ClipoScript, on item: ClipItem) {
         guard let input = item.text, !input.isEmpty else {
-            showScriptAlert(title: "No text to transform",
+            showScriptAlert(title: "\(script.name): no text to transform",
                             message: "This script needs a text item as input.")
             return
         }
@@ -224,7 +224,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             showPreview(item: transient)
 
         case .failure(let error):
-            showScriptAlert(title: "Script failed",
+            showScriptAlert(title: "\(script.name) failed",
                             message: error.localizedDescription)
         }
     }
@@ -287,6 +287,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             for await _ in Defaults.updates(.sortBy, initial: false) {
                 guard self != nil else { return }
                 AppState.shared.refresh()
+            }
+        }
+
+        // Drop the compiled-regex cache when the user edits patterns.
+        Task { [weak self] in
+            for await _ in Defaults.updates(.ignoreRegexp, initial: false) {
+                guard self != nil else { return }
+                ClipboardEngine.shared.invalidateRegexCache()
             }
         }
 

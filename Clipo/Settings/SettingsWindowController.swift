@@ -57,13 +57,13 @@ enum SettingsCategory: String, Hashable, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .general:    return "Shortcut, paste, search"
-        case .appearance: return "Theme, panel, cards"
-        case .storage:    return "History, types, sorting"
-        case .pinboards:  return "Manage collections"
-        case .scripts:    return "Enable, manage folder"
-        case .ignore:     return "Apps, types, regex"
-        case .advanced:   return "Diagnostics, reset"
+        case .general:    return "Hotkey, paste, search behavior"
+        case .appearance: return "Menu bar, accent color, panel size"
+        case .storage:    return "History size, content types, clear"
+        case .pinboards:  return "Create, rename, reorder collections"
+        case .scripts:    return "Built-in + custom JS transforms"
+        case .ignore:     return "Exclude apps, pasteboard types, regex"
+        case .advanced:   return "Pause monitoring, permissions, reset"
         }
     }
 

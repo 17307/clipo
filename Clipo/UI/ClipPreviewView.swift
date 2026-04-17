@@ -64,6 +64,8 @@ struct ClipPreviewView: View {
             }
             .buttonStyle(.plain)
             .pointingHand()
+            .accessibilityLabel("Close preview")
+            .help("Close preview")
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
@@ -293,12 +295,11 @@ struct ClipPreviewView: View {
 
     private var sourceAppInfo: (name: String, icon: NSImage)? {
         guard let id = item.sourceAppBundleID,
-              let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) else {
+              let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id),
+              let icon = AppIconCache.icon(forBundleID: id, size: 22) else {
             return nil
         }
         let name = FileManager.default.displayName(atPath: url.path)
-        let icon = NSWorkspace.shared.icon(forFile: url.path)
-        icon.size = NSSize(width: 22, height: 22)
         return (name, icon)
     }
 
