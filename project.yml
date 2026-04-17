@@ -1,0 +1,72 @@
+name: Clipo
+options:
+  bundleIdPrefix: com.ymoon
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+  xcodeVersion: "15.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_HARDENED_RUNTIME: YES
+
+packages:
+  Defaults:
+    url: https://github.com/sindresorhus/Defaults
+    from: "8.2.0"
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: "2.2.0"
+
+targets:
+  Clipo:
+    type: application
+    platform: macOS
+    sources:
+      - path: Clipo
+        excludes:
+          - "**/*.plist"
+          - "**/*.entitlements"
+    resources:
+      - Clipo/Resources
+    info:
+      path: Clipo/Info.plist
+      properties:
+        CFBundleName: Clipo
+        CFBundleDisplayName: Clipo
+        CFBundleIdentifier: com.ymoon.clipo
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundlePackageType: APPL
+        CFBundleExecutable: "$(EXECUTABLE_NAME)"
+        LSMinimumSystemVersion: "$(MACOSX_DEPLOYMENT_TARGET)"
+        LSUIElement: true
+        NSHumanReadableCopyright: "Copyright © 2026 ymoon"
+        NSAppleEventsUsageDescription: "Clipo needs Apple Events to paste into other apps."
+    entitlements:
+      path: Clipo/Clipo.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.automation.apple-events: true
+    dependencies:
+      - package: Defaults
+      - package: KeyboardShortcuts
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ymoon.clipo
+        PRODUCT_NAME: Clipo
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Clipo/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Clipo/Clipo.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_PREVIEWS: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+        COMBINE_HIDPI_IMAGES: YES

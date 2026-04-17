@@ -1,0 +1,20 @@
+# Build output
+build/
+DerivedData/
+
+# Xcode per-user state
+**/xcuserdata/
+**/*.xcuserstate
+**/*.xcuserdatad
+
+# Swift Package Manager caches
+.build/
+.swiftpm/
+Package.pins
+Packages/
+
+# macOS metadata
+.DS_Store
+
+# Logs
+*.log

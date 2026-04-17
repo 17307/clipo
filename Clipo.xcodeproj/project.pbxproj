@@ -1,0 +1,626 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		060E31DCFBA392B5F98D1CD0 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = A4AEACB69C61A7CF152DA7A4 /* KeyboardShortcuts */; };
+		1DCDFB7E1167EAF6233747EC /* StoragePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910C85943BDFF5718D8B74C3 /* StoragePane.swift */; };
+		1E701EE77849E496A119CA2F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7336251A3C7E88ADABD838 /* AppDelegate.swift */; };
+		3C299404B92F2DC7BB58A801 /* PinboardsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4172B4F096FE74BD0E199217 /* PinboardsPane.swift */; };
+		3F741C224F7437F435AFEC6C /* GlobalHotkeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470C204D4FE9087FAF75FC80 /* GlobalHotkeys.swift */; };
+		419E879F197AD54F4391D117 /* ScriptDocsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D8A2D4ACBA271C7DF1787E5 /* ScriptDocsView.swift */; };
+		50D1BC4FD3E899C02A9EE86E /* ScriptLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F5DFD89E8996C8057C0F8C7 /* ScriptLoader.swift */; };
+		54825FC496525EE64125C02B /* ClipboardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52C815B2FA6DC58FEFEEF1E9 /* ClipboardEngine.swift */; };
+		5A324279153217B5A0230F23 /* ClickCatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA07A0B1A3DEAC7138C3B0D7 /* ClickCatcher.swift */; };
+		63DF75707E0AC8360FAB649A /* VisualEffectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D34A4C2B311D48C89C8339DB /* VisualEffectView.swift */; };
+		6E3D1DA0C43E7A6E8F4D1410 /* GeneralPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5F1B17F1D52F656B6F9AE0 /* GeneralPane.swift */; };
+		7663237019E12F9AA1C690A6 /* NSPasteboardType+Clipo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B547A73E4658830E495ABE /* NSPasteboardType+Clipo.swift */; };
+		7C8E72067E4E0327B7CE9F5D /* PreviewPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3FA36E879E8EAA67F515DF /* PreviewPanel.swift */; };
+		924D454E480D46B0077184B4 /* IgnorePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD72233A5AA79058C7DE1F /* IgnorePane.swift */; };
+		973AB7E0E718E3F4F175ADDD /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91C9AFD7CA232816D50CBA5 /* LaunchAtLogin.swift */; };
+		A01E6EDF4101C5C4CE880A39 /* ClipItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DFF28B4DB3BB62BE4AE39D7 /* ClipItem.swift */; };
+		AA18774407A1EDD62BFE02E6 /* ScriptsFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675353C5353849600A97AA65 /* ScriptsFolder.swift */; };
+		AC29F75B30B999F905400535 /* AppearancePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9FB56A54B21C1D5448D719D /* AppearancePane.swift */; };
+		AE7A39F36877CC0F943433BB /* ClipoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2114447BE9B1F190A234951 /* ClipoApp.swift */; };
+		B000BBD39BD98520AC84BFA5 /* Pinboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F232EA8632112A9CCCD420 /* Pinboard.swift */; };
+		B65F8429E750F4CCB7D65C5C /* ScriptsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40B55EC6AD7740713CD7FA8 /* ScriptsPane.swift */; };
+		BB94F9261741F1978DD83D42 /* ScriptEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C651EDED105BE6388FC3F38E /* ScriptEngine.swift */; };
+		C73859DDE4D9958B79B2456B /* ClipCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99EF01521B361812E23517E9 /* ClipCarouselView.swift */; };
+		CB89AC6C6CB068C23133227F /* ClipoScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EBE7C6AC7AB6B0333458B2 /* ClipoScript.swift */; };
+		CCF7E83D2E11F471EA87BA06 /* ClipCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DDA2D46ED645424465E3FDD /* ClipCardView.swift */; };
+		CD69E7C4D0AF4F5C27D1B2B2 /* ClipFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95CC7080C0E87D0C080848F1 /* ClipFilter.swift */; };
+		D1D4C5DE96E1447CF683C711 /* String+Shortened.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9651FD0BBD95728AFBF07BA3 /* String+Shortened.swift */; };
+		D3845CD64270AEEB2B8463D6 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5B746C2241AEA7708F9489 /* SettingsWindowController.swift */; };
+		D7E1B9DF14557812A33780DD /* Paster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58DCFDA0EB87CDC5890F15AA /* Paster.swift */; };
+		E0D223A49654EFCCBF35083B /* ClipContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1761C747BD2A13565B0466 /* ClipContent.swift */; };
+		E16C06E0C7945DDF8A6B5C96 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72979EF484E426D26E0A7637 /* DesignTokens.swift */; };
+		E203D245B2DA47E89ADBB629 /* ScrollableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1404324EF8B2D1070E268B0 /* ScrollableTextView.swift */; };
+		E3CF6B64A23909C06AB61280 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8EC88D21543F50E84CBF0027 /* Assets.xcassets */; };
+		E5EF95D474EA1ABC3FB8B17D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58827E8DECED641A1207EFF /* AppState.swift */; };
+		E7A7ACF750D102FE5B939D0E /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DBAC5D5F6A9DCF981BB828D /* RootView.swift */; };
+		E9F4A3DF822AB56DBEEC119C /* DefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A6158FDDD74D07FE2555A52 /* DefaultsKeys.swift */; };
+		EA128574AD8FA5C3321609A8 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E79299DBC2419FF23F99DC0 /* Accessibility.swift */; };
+		EAB9DDD02177E4C70B7FD6F6 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = C3FFAC52C22606908E0CB5A5 /* Defaults */; };
+		EE00F95B15FA92F984FE148B /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7721AC49BE856A5D11FFD701 /* Storage.swift */; };
+		F36898A95C1D5901EA2ED66D /* BuiltInScripts.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3A4DEF6FBBD51AD89CC72F /* BuiltInScripts.swift */; };
+		F87038C5A2D3189B65B1E2FF /* BottomPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 057E3232452A09BC045F5C65 /* BottomPanel.swift */; };
+		F9698A032B2181163345DBAF /* AdvancedPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812A14A88A78F239E61A16FB /* AdvancedPane.swift */; };
+		FED2435768ED1EDBDDBCFE81 /* ClipPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB451705D1C7D5489CEA3DE /* ClipPreviewView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		057E3232452A09BC045F5C65 /* BottomPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomPanel.swift; sourceTree = "<group>"; };
+		2FB451705D1C7D5489CEA3DE /* ClipPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipPreviewView.swift; sourceTree = "<group>"; };
+		3A6158FDDD74D07FE2555A52 /* DefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsKeys.swift; sourceTree = "<group>"; };
+		3B3FA36E879E8EAA67F515DF /* PreviewPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPanel.swift; sourceTree = "<group>"; };
+		3B7336251A3C7E88ADABD838 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		3E79299DBC2419FF23F99DC0 /* Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Accessibility.swift; sourceTree = "<group>"; };
+		4172B4F096FE74BD0E199217 /* PinboardsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinboardsPane.swift; sourceTree = "<group>"; };
+		470C204D4FE9087FAF75FC80 /* GlobalHotkeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeys.swift; sourceTree = "<group>"; };
+		48B547A73E4658830E495ABE /* NSPasteboardType+Clipo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSPasteboardType+Clipo.swift"; sourceTree = "<group>"; };
+		4B5F1B17F1D52F656B6F9AE0 /* GeneralPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralPane.swift; sourceTree = "<group>"; };
+		52C815B2FA6DC58FEFEEF1E9 /* ClipboardEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardEngine.swift; sourceTree = "<group>"; };
+		58DCFDA0EB87CDC5890F15AA /* Paster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Paster.swift; sourceTree = "<group>"; };
+		5DDA2D46ED645424465E3FDD /* ClipCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipCardView.swift; sourceTree = "<group>"; };
+		675353C5353849600A97AA65 /* ScriptsFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsFolder.swift; sourceTree = "<group>"; };
+		6C1761C747BD2A13565B0466 /* ClipContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipContent.swift; sourceTree = "<group>"; };
+		6D8A2D4ACBA271C7DF1787E5 /* ScriptDocsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDocsView.swift; sourceTree = "<group>"; };
+		72979EF484E426D26E0A7637 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
+		7721AC49BE856A5D11FFD701 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
+		7DBAC5D5F6A9DCF981BB828D /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		7F5DFD89E8996C8057C0F8C7 /* ScriptLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLoader.swift; sourceTree = "<group>"; };
+		812A14A88A78F239E61A16FB /* AdvancedPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedPane.swift; sourceTree = "<group>"; };
+		8DFF28B4DB3BB62BE4AE39D7 /* ClipItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipItem.swift; sourceTree = "<group>"; };
+		8EC88D21543F50E84CBF0027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8F5B746C2241AEA7708F9489 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		910C85943BDFF5718D8B74C3 /* StoragePane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoragePane.swift; sourceTree = "<group>"; };
+		95CC7080C0E87D0C080848F1 /* ClipFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFilter.swift; sourceTree = "<group>"; };
+		9651FD0BBD95728AFBF07BA3 /* String+Shortened.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shortened.swift"; sourceTree = "<group>"; };
+		98F232EA8632112A9CCCD420 /* Pinboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pinboard.swift; sourceTree = "<group>"; };
+		99EF01521B361812E23517E9 /* ClipCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipCarouselView.swift; sourceTree = "<group>"; };
+		A2114447BE9B1F190A234951 /* ClipoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoApp.swift; sourceTree = "<group>"; };
+		A91C9AFD7CA232816D50CBA5 /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
+		AA07A0B1A3DEAC7138C3B0D7 /* ClickCatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickCatcher.swift; sourceTree = "<group>"; };
+		B0EBE7C6AC7AB6B0333458B2 /* ClipoScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoScript.swift; sourceTree = "<group>"; };
+		C58827E8DECED641A1207EFF /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		C651EDED105BE6388FC3F38E /* ScriptEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptEngine.swift; sourceTree = "<group>"; };
+		C6A362156D3985406CAD92DD /* Clipo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Clipo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CBAD72233A5AA79058C7DE1F /* IgnorePane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IgnorePane.swift; sourceTree = "<group>"; };
+		D34A4C2B311D48C89C8339DB /* VisualEffectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectView.swift; sourceTree = "<group>"; };
+		D9FB56A54B21C1D5448D719D /* AppearancePane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearancePane.swift; sourceTree = "<group>"; };
+		DB3A4DEF6FBBD51AD89CC72F /* BuiltInScripts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltInScripts.swift; sourceTree = "<group>"; };
+		E1404324EF8B2D1070E268B0 /* ScrollableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableTextView.swift; sourceTree = "<group>"; };
+		E40B55EC6AD7740713CD7FA8 /* ScriptsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsPane.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		82A973D67B630D3AA851B225 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EAB9DDD02177E4C70B7FD6F6 /* Defaults in Frameworks */,
+				060E31DCFBA392B5F98D1CD0 /* KeyboardShortcuts in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		007D9333BBF967692FDBED9C /* App */ = {
+			isa = PBXGroup;
+			children = (
+				3B7336251A3C7E88ADABD838 /* AppDelegate.swift */,
+				A2114447BE9B1F190A234951 /* ClipoApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		00B5AFFC87E0A9D34832F946 = {
+			isa = PBXGroup;
+			children = (
+				8238C7C2DD6E42818762817A /* Clipo */,
+				0E1DA69DD4ADA53544E8ABD4 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		04F2B38E08AF6B8D04396CDA /* Clipboard */ = {
+			isa = PBXGroup;
+			children = (
+				3E79299DBC2419FF23F99DC0 /* Accessibility.swift */,
+				52C815B2FA6DC58FEFEEF1E9 /* ClipboardEngine.swift */,
+				58DCFDA0EB87CDC5890F15AA /* Paster.swift */,
+			);
+			path = Clipboard;
+			sourceTree = "<group>";
+		};
+		0E1DA69DD4ADA53544E8ABD4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C6A362156D3985406CAD92DD /* Clipo.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0F106D05DB0064BA5A2BF8A9 /* Panes */ = {
+			isa = PBXGroup;
+			children = (
+				812A14A88A78F239E61A16FB /* AdvancedPane.swift */,
+				D9FB56A54B21C1D5448D719D /* AppearancePane.swift */,
+				4B5F1B17F1D52F656B6F9AE0 /* GeneralPane.swift */,
+				CBAD72233A5AA79058C7DE1F /* IgnorePane.swift */,
+				4172B4F096FE74BD0E199217 /* PinboardsPane.swift */,
+				6D8A2D4ACBA271C7DF1787E5 /* ScriptDocsView.swift */,
+				E40B55EC6AD7740713CD7FA8 /* ScriptsPane.swift */,
+				910C85943BDFF5718D8B74C3 /* StoragePane.swift */,
+			);
+			path = Panes;
+			sourceTree = "<group>";
+		};
+		3E043ACBB2A71E7C765832A3 /* State */ = {
+			isa = PBXGroup;
+			children = (
+				C58827E8DECED641A1207EFF /* AppState.swift */,
+				95CC7080C0E87D0C080848F1 /* ClipFilter.swift */,
+			);
+			path = State;
+			sourceTree = "<group>";
+		};
+		44220E33D6632A2485871511 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				8EC88D21543F50E84CBF0027 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		46901FCC605B0D1B82E267AD /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				6C1761C747BD2A13565B0466 /* ClipContent.swift */,
+				8DFF28B4DB3BB62BE4AE39D7 /* ClipItem.swift */,
+				98F232EA8632112A9CCCD420 /* Pinboard.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		65814E4B577ABDF74FB15333 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				057E3232452A09BC045F5C65 /* BottomPanel.swift */,
+				AA07A0B1A3DEAC7138C3B0D7 /* ClickCatcher.swift */,
+				5DDA2D46ED645424465E3FDD /* ClipCardView.swift */,
+				99EF01521B361812E23517E9 /* ClipCarouselView.swift */,
+				2FB451705D1C7D5489CEA3DE /* ClipPreviewView.swift */,
+				72979EF484E426D26E0A7637 /* DesignTokens.swift */,
+				3B3FA36E879E8EAA67F515DF /* PreviewPanel.swift */,
+				7DBAC5D5F6A9DCF981BB828D /* RootView.swift */,
+				E1404324EF8B2D1070E268B0 /* ScrollableTextView.swift */,
+				D34A4C2B311D48C89C8339DB /* VisualEffectView.swift */,
+				C2B715D8C4E40098FF78DCE9 /* Cards */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		8238C7C2DD6E42818762817A /* Clipo */ = {
+			isa = PBXGroup;
+			children = (
+				007D9333BBF967692FDBED9C /* App */,
+				04F2B38E08AF6B8D04396CDA /* Clipboard */,
+				EA474A11A1DE1B86A1EF99C9 /* Extensions */,
+				CB79F04D818F8413AF28435A /* Hotkeys */,
+				46901FCC605B0D1B82E267AD /* Models */,
+				44220E33D6632A2485871511 /* Resources */,
+				D718D94F6DDAC8ED6CF97228 /* Scripts */,
+				9ABDD493A04594AA834003E5 /* Settings */,
+				3E043ACBB2A71E7C765832A3 /* State */,
+				8E0973BC33BE5CC063C032CE /* Storage */,
+				65814E4B577ABDF74FB15333 /* UI */,
+			);
+			path = Clipo;
+			sourceTree = "<group>";
+		};
+		8E0973BC33BE5CC063C032CE /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				7721AC49BE856A5D11FFD701 /* Storage.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		9ABDD493A04594AA834003E5 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				3A6158FDDD74D07FE2555A52 /* DefaultsKeys.swift */,
+				A91C9AFD7CA232816D50CBA5 /* LaunchAtLogin.swift */,
+				8F5B746C2241AEA7708F9489 /* SettingsWindowController.swift */,
+				0F106D05DB0064BA5A2BF8A9 /* Panes */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		C2B715D8C4E40098FF78DCE9 /* Cards */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cards;
+			sourceTree = "<group>";
+		};
+		CB79F04D818F8413AF28435A /* Hotkeys */ = {
+			isa = PBXGroup;
+			children = (
+				470C204D4FE9087FAF75FC80 /* GlobalHotkeys.swift */,
+			);
+			path = Hotkeys;
+			sourceTree = "<group>";
+		};
+		D718D94F6DDAC8ED6CF97228 /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				DB3A4DEF6FBBD51AD89CC72F /* BuiltInScripts.swift */,
+				B0EBE7C6AC7AB6B0333458B2 /* ClipoScript.swift */,
+				C651EDED105BE6388FC3F38E /* ScriptEngine.swift */,
+				7F5DFD89E8996C8057C0F8C7 /* ScriptLoader.swift */,
+				675353C5353849600A97AA65 /* ScriptsFolder.swift */,
+			);
+			path = Scripts;
+			sourceTree = "<group>";
+		};
+		EA474A11A1DE1B86A1EF99C9 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				48B547A73E4658830E495ABE /* NSPasteboardType+Clipo.swift */,
+				9651FD0BBD95728AFBF07BA3 /* String+Shortened.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A2C3471D27E1665A6B64D056 /* Clipo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0B1DCDC9F132536CC6FFDBBB /* Build configuration list for PBXNativeTarget "Clipo" */;
+			buildPhases = (
+				54C16940CA1AB0F4587479B7 /* Sources */,
+				A1388B1FB88635708D1F2FAC /* Resources */,
+				82A973D67B630D3AA851B225 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Clipo;
+			packageProductDependencies = (
+				C3FFAC52C22606908E0CB5A5 /* Defaults */,
+				A4AEACB69C61A7CF152DA7A4 /* KeyboardShortcuts */,
+			);
+			productName = Clipo;
+			productReference = C6A362156D3985406CAD92DD /* Clipo.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B562120509370669BFB205A6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A2C3471D27E1665A6B64D056 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 691F86DBF518DBF2FE24E194 /* Build configuration list for PBXProject "Clipo" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 00B5AFFC87E0A9D34832F946;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F5D05C5E153C4D7E8AD24CA7 /* XCRemoteSwiftPackageReference "Defaults" */,
+				B354BEB42B2488D7EFD6F7A9 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0E1DA69DD4ADA53544E8ABD4 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A2C3471D27E1665A6B64D056 /* Clipo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1388B1FB88635708D1F2FAC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E3CF6B64A23909C06AB61280 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		54C16940CA1AB0F4587479B7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EA128574AD8FA5C3321609A8 /* Accessibility.swift in Sources */,
+				F9698A032B2181163345DBAF /* AdvancedPane.swift in Sources */,
+				1E701EE77849E496A119CA2F /* AppDelegate.swift in Sources */,
+				E5EF95D474EA1ABC3FB8B17D /* AppState.swift in Sources */,
+				AC29F75B30B999F905400535 /* AppearancePane.swift in Sources */,
+				F87038C5A2D3189B65B1E2FF /* BottomPanel.swift in Sources */,
+				F36898A95C1D5901EA2ED66D /* BuiltInScripts.swift in Sources */,
+				5A324279153217B5A0230F23 /* ClickCatcher.swift in Sources */,
+				CCF7E83D2E11F471EA87BA06 /* ClipCardView.swift in Sources */,
+				C73859DDE4D9958B79B2456B /* ClipCarouselView.swift in Sources */,
+				E0D223A49654EFCCBF35083B /* ClipContent.swift in Sources */,
+				CD69E7C4D0AF4F5C27D1B2B2 /* ClipFilter.swift in Sources */,
+				A01E6EDF4101C5C4CE880A39 /* ClipItem.swift in Sources */,
+				FED2435768ED1EDBDDBCFE81 /* ClipPreviewView.swift in Sources */,
+				54825FC496525EE64125C02B /* ClipboardEngine.swift in Sources */,
+				AE7A39F36877CC0F943433BB /* ClipoApp.swift in Sources */,
+				CB89AC6C6CB068C23133227F /* ClipoScript.swift in Sources */,
+				E9F4A3DF822AB56DBEEC119C /* DefaultsKeys.swift in Sources */,
+				E16C06E0C7945DDF8A6B5C96 /* DesignTokens.swift in Sources */,
+				6E3D1DA0C43E7A6E8F4D1410 /* GeneralPane.swift in Sources */,
+				3F741C224F7437F435AFEC6C /* GlobalHotkeys.swift in Sources */,
+				924D454E480D46B0077184B4 /* IgnorePane.swift in Sources */,
+				973AB7E0E718E3F4F175ADDD /* LaunchAtLogin.swift in Sources */,
+				7663237019E12F9AA1C690A6 /* NSPasteboardType+Clipo.swift in Sources */,
+				D7E1B9DF14557812A33780DD /* Paster.swift in Sources */,
+				B000BBD39BD98520AC84BFA5 /* Pinboard.swift in Sources */,
+				3C299404B92F2DC7BB58A801 /* PinboardsPane.swift in Sources */,
+				7C8E72067E4E0327B7CE9F5D /* PreviewPanel.swift in Sources */,
+				E7A7ACF750D102FE5B939D0E /* RootView.swift in Sources */,
+				419E879F197AD54F4391D117 /* ScriptDocsView.swift in Sources */,
+				BB94F9261741F1978DD83D42 /* ScriptEngine.swift in Sources */,
+				50D1BC4FD3E899C02A9EE86E /* ScriptLoader.swift in Sources */,
+				AA18774407A1EDD62BFE02E6 /* ScriptsFolder.swift in Sources */,
+				B65F8429E750F4CCB7D65C5C /* ScriptsPane.swift in Sources */,
+				E203D245B2DA47E89ADBB629 /* ScrollableTextView.swift in Sources */,
+				D3845CD64270AEEB2B8463D6 /* SettingsWindowController.swift in Sources */,
+				EE00F95B15FA92F984FE148B /* Storage.swift in Sources */,
+				1DCDFB7E1167EAF6233747EC /* StoragePane.swift in Sources */,
+				D1D4C5DE96E1447CF683C711 /* String+Shortened.swift in Sources */,
+				63DF75707E0AC8360FAB649A /* VisualEffectView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		468F2C309028798335DFA9FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		70CBAB24FF1A28AFF18E44DD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+		88EA151EC84FD61BAA9D27CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Clipo/Clipo.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Clipo/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.ymoon.clipo;
+				PRODUCT_NAME = Clipo;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		A53F4DBA18E295BD24510576 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Clipo/Clipo.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Clipo/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.ymoon.clipo;
+				PRODUCT_NAME = Clipo;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0B1DCDC9F132536CC6FFDBBB /* Build configuration list for PBXNativeTarget "Clipo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				88EA151EC84FD61BAA9D27CD /* Debug */,
+				A53F4DBA18E295BD24510576 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		691F86DBF518DBF2FE24E194 /* Build configuration list for PBXProject "Clipo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				70CBAB24FF1A28AFF18E44DD /* Debug */,
+				468F2C309028798335DFA9FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B354BEB42B2488D7EFD6F7A9 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.2.0;
+			};
+		};
+		F5D05C5E153C4D7E8AD24CA7 /* XCRemoteSwiftPackageReference "Defaults" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/Defaults";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A4AEACB69C61A7CF152DA7A4 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B354BEB42B2488D7EFD6F7A9 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+		C3FFAC52C22606908E0CB5A5 /* Defaults */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5D05C5E153C4D7E8AD24CA7 /* XCRemoteSwiftPackageReference "Defaults" */;
+			productName = Defaults;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = B562120509370669BFB205A6 /* Project object */;
+}
