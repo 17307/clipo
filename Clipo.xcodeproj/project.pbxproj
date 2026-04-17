@@ -10,6 +10,7 @@
 		060E31DCFBA392B5F98D1CD0 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = A4AEACB69C61A7CF152DA7A4 /* KeyboardShortcuts */; };
 		1DCDFB7E1167EAF6233747EC /* StoragePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910C85943BDFF5718D8B74C3 /* StoragePane.swift */; };
 		1E701EE77849E496A119CA2F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7336251A3C7E88ADABD838 /* AppDelegate.swift */; };
+		2A04BCA9A10FD5661A0BFECE /* IPCServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41417CCD2FCA406229EF21D7 /* IPCServer.swift */; };
 		3C299404B92F2DC7BB58A801 /* PinboardsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4172B4F096FE74BD0E199217 /* PinboardsPane.swift */; };
 		3F741C224F7437F435AFEC6C /* GlobalHotkeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470C204D4FE9087FAF75FC80 /* GlobalHotkeys.swift */; };
 		419E879F197AD54F4391D117 /* ScriptDocsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D8A2D4ACBA271C7DF1787E5 /* ScriptDocsView.swift */; };
@@ -22,6 +23,7 @@
 		6E3D1DA0C43E7A6E8F4D1410 /* GeneralPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5F1B17F1D52F656B6F9AE0 /* GeneralPane.swift */; };
 		7663237019E12F9AA1C690A6 /* NSPasteboardType+Clipo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B547A73E4658830E495ABE /* NSPasteboardType+Clipo.swift */; };
 		7C8E72067E4E0327B7CE9F5D /* PreviewPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3FA36E879E8EAA67F515DF /* PreviewPanel.swift */; };
+		825DCCE910D7B1F9DE33D3C6 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E40A3040FD70CDFEA4162C /* main.swift */; };
 		924D454E480D46B0077184B4 /* IgnorePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD72233A5AA79058C7DE1F /* IgnorePane.swift */; };
 		973AB7E0E718E3F4F175ADDD /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91C9AFD7CA232816D50CBA5 /* LaunchAtLogin.swift */; };
 		A01E6EDF4101C5C4CE880A39 /* ClipItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DFF28B4DB3BB62BE4AE39D7 /* ClipItem.swift */; };
@@ -61,6 +63,7 @@
 		3B3FA36E879E8EAA67F515DF /* PreviewPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPanel.swift; sourceTree = "<group>"; };
 		3B7336251A3C7E88ADABD838 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		3E79299DBC2419FF23F99DC0 /* Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Accessibility.swift; sourceTree = "<group>"; };
+		41417CCD2FCA406229EF21D7 /* IPCServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPCServer.swift; sourceTree = "<group>"; };
 		4172B4F096FE74BD0E199217 /* PinboardsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinboardsPane.swift; sourceTree = "<group>"; };
 		470C204D4FE9087FAF75FC80 /* GlobalHotkeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeys.swift; sourceTree = "<group>"; };
 		48B547A73E4658830E495ABE /* NSPasteboardType+Clipo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSPasteboardType+Clipo.swift"; sourceTree = "<group>"; };
@@ -72,6 +75,7 @@
 		675353C5353849600A97AA65 /* ScriptsFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsFolder.swift; sourceTree = "<group>"; };
 		6C1761C747BD2A13565B0466 /* ClipContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipContent.swift; sourceTree = "<group>"; };
 		6D8A2D4ACBA271C7DF1787E5 /* ScriptDocsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDocsView.swift; sourceTree = "<group>"; };
+		6F30EBDAABB1132C526F61D7 /* clipocli */ = {isa = PBXFileReference; includeInIndex = 0; path = clipocli; sourceTree = BUILT_PRODUCTS_DIR; };
 		72979EF484E426D26E0A7637 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		7721AC49BE856A5D11FFD701 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
 		7DBAC5D5F6A9DCF981BB828D /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -90,6 +94,7 @@
 		A91C9AFD7CA232816D50CBA5 /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
 		AA07A0B1A3DEAC7138C3B0D7 /* ClickCatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickCatcher.swift; sourceTree = "<group>"; };
 		B0EBE7C6AC7AB6B0333458B2 /* ClipoScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoScript.swift; sourceTree = "<group>"; };
+		B3E40A3040FD70CDFEA4162C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		C58827E8DECED641A1207EFF /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		C651EDED105BE6388FC3F38E /* ScriptEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptEngine.swift; sourceTree = "<group>"; };
 		C6A362156D3985406CAD92DD /* Clipo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Clipo.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -127,6 +132,7 @@
 			isa = PBXGroup;
 			children = (
 				8238C7C2DD6E42818762817A /* Clipo */,
+				A9E5479D23F88FCD3299735C /* clipocli */,
 				0E1DA69DD4ADA53544E8ABD4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -145,6 +151,7 @@
 			isa = PBXGroup;
 			children = (
 				C6A362156D3985406CAD92DD /* Clipo.app */,
+				6F30EBDAABB1132C526F61D7 /* clipocli */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -171,6 +178,14 @@
 				95CC7080C0E87D0C080848F1 /* ClipFilter.swift */,
 			);
 			path = State;
+			sourceTree = "<group>";
+		};
+		436CF4C6631C662DE6FD27C8 /* IPC */ = {
+			isa = PBXGroup;
+			children = (
+				41417CCD2FCA406229EF21D7 /* IPCServer.swift */,
+			);
+			path = IPC;
 			sourceTree = "<group>";
 		};
 		44220E33D6632A2485871511 /* Resources */ = {
@@ -218,6 +233,7 @@
 				04F2B38E08AF6B8D04396CDA /* Clipboard */,
 				EA474A11A1DE1B86A1EF99C9 /* Extensions */,
 				CB79F04D818F8413AF28435A /* Hotkeys */,
+				436CF4C6631C662DE6FD27C8 /* IPC */,
 				46901FCC605B0D1B82E267AD /* Models */,
 				44220E33D6632A2485871511 /* Resources */,
 				D718D94F6DDAC8ED6CF97228 /* Scripts */,
@@ -246,6 +262,14 @@
 				0F106D05DB0064BA5A2BF8A9 /* Panes */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		A9E5479D23F88FCD3299735C /* clipocli */ = {
+			isa = PBXGroup;
+			children = (
+				B3E40A3040FD70CDFEA4162C /* main.swift */,
+			);
+			path = clipocli;
 			sourceTree = "<group>";
 		};
 		C2B715D8C4E40098FF78DCE9 /* Cards */ = {
@@ -308,6 +332,23 @@
 			productReference = C6A362156D3985406CAD92DD /* Clipo.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E0D35915E56857E4D3895ADB /* clipocli */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9C279DEF8BA8355734132A90 /* Build configuration list for PBXNativeTarget "clipocli" */;
+			buildPhases = (
+				8CC600E3A08D7A81E9E1B900 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = clipocli;
+			packageProductDependencies = (
+			);
+			productName = clipocli;
+			productReference = 6F30EBDAABB1132C526F61D7 /* clipocli */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -318,6 +359,10 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					A2C3471D27E1665A6B64D056 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					E0D35915E56857E4D3895ADB = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
@@ -342,6 +387,7 @@
 			projectRoot = "";
 			targets = (
 				A2C3471D27E1665A6B64D056 /* Clipo */,
+				E0D35915E56857E4D3895ADB /* clipocli */,
 			);
 		};
 /* End PBXProject section */
@@ -384,6 +430,7 @@
 				E16C06E0C7945DDF8A6B5C96 /* DesignTokens.swift in Sources */,
 				6E3D1DA0C43E7A6E8F4D1410 /* GeneralPane.swift in Sources */,
 				3F741C224F7437F435AFEC6C /* GlobalHotkeys.swift in Sources */,
+				2A04BCA9A10FD5661A0BFECE /* IPCServer.swift in Sources */,
 				924D454E480D46B0077184B4 /* IgnorePane.swift in Sources */,
 				973AB7E0E718E3F4F175ADDD /* LaunchAtLogin.swift in Sources */,
 				7663237019E12F9AA1C690A6 /* NSPasteboardType+Clipo.swift in Sources */,
@@ -404,6 +451,14 @@
 				1DCDFB7E1167EAF6233747EC /* StoragePane.swift in Sources */,
 				D1D4C5DE96E1447CF683C711 /* String+Shortened.swift in Sources */,
 				63DF75707E0AC8360FAB649A /* VisualEffectView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8CC600E3A08D7A81E9E1B900 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				825DCCE910D7B1F9DE33D3C6 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -468,6 +523,46 @@
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		59557B2F9EEC02813181C3BB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ymoon.clipocli;
+				PRODUCT_NAME = clipocli;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+		6873D72D89BE9C958286069E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ymoon.clipocli;
+				PRODUCT_NAME = clipocli;
+				SDKROOT = macosx;
 				SWIFT_VERSION = 5.10;
 			};
 			name = Release;
@@ -592,6 +687,15 @@
 			buildConfigurations = (
 				70CBAB24FF1A28AFF18E44DD /* Debug */,
 				468F2C309028798335DFA9FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9C279DEF8BA8355734132A90 /* Build configuration list for PBXNativeTarget "clipocli" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				59557B2F9EEC02813181C3BB /* Debug */,
+				6873D72D89BE9C958286069E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -70,3 +70,19 @@ targets:
         SWIFT_EMIT_LOC_STRINGS: YES
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
         COMBINE_HIDPI_IMAGES: YES
+
+  clipocli:
+    type: tool
+    platform: macOS
+    sources:
+      - path: clipocli
+    settings:
+      base:
+        PRODUCT_NAME: clipocli
+        PRODUCT_BUNDLE_IDENTIFIER: com.ymoon.clipocli
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        SWIFT_VERSION: "5.10"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_HARDENED_RUNTIME: NO

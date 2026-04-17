@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         BuiltInScripts.installIfNeeded()
         AppState.shared.refreshScripts()
         AppState.shared.installDefaultPinboardsIfNeeded()
+        IPCServer.shared.start()
 
         // Prompt for Accessibility permission (required for CGEvent paste) on first launch.
         if !Accessibility.isTrusted(prompt: false) {
@@ -201,6 +202,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func closePanel() {
         panel?.close()
     }
+
+    /// Exposed for IPC consumers (e.g. `clipocli health`).
+    var panelIsPresented: Bool { panel?.isPresented == true }
 
     // MARK: - Preview panel
 
