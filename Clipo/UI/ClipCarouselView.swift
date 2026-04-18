@@ -43,19 +43,14 @@ struct ClipCarouselView: View {
                                 )
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))
-                                // SwiftUI .onDrag. Drop targets other than
-                                // Finder work fine; Finder's drag IPC
-                                // reenters and wedges the whole OS-wide
-                                // drag subsystem if we hand it one of our
-                                // drags, so we explicitly refuse when
-                                // Finder is the app behind the panel. The
-                                // same workaround is used by every other
-                                // clipboard manager we tested.
+                                // SwiftUI .onDrag — the only drag path that
+                                // reliably reaches Finder. Custom AppKit
+                                // beginDraggingSession triggered
+                                // kDragIPCWithinWindow reentrancy on some
+                                // systems; SwiftUI's implementation goes
+                                // through a single IPC channel that drop
+                                // targets accept.
                                 .onDrag {
-                                    if isFinderFrontmost() {
-                                        state.notifyFinderDragBlocked()
-                                        return NSItemProvider()
-                                    }
                                     DispatchQueue.main.async {
                                         state.appDelegate?.closePanel()
                                     }
@@ -304,15 +299,6 @@ struct ClipCarouselView: View {
         let next = idx + direction
         guard next >= 0, next < state.items.count else { return }
         state.extendSelection(to: state.items[next].id)
-    }
-
-    /// True when Finder is the frontmost app right now. Because our
-    /// panel is a .nonactivatingPanel, the app behind Clipo stays
-    /// frontmost for the whole panel lifetime — so checking at drag
-    /// time tells us whether a drag would likely target a Finder
-    /// window / the desktop.
-    private func isFinderFrontmost() -> Bool {
-        NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder"
     }
 
     /// Suffix a menu item's title with the current binding's glyph so the
