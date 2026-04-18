@@ -89,7 +89,7 @@ enum ScriptEngine {
         if FileManager.default.fileExists(atPath: url.path),
            let handle = try? FileHandle(forWritingTo: url) {
             defer { try? handle.close() }
-            try? handle.seekToEnd()
+            _ = try? handle.seekToEnd()
             if let data = line.data(using: .utf8) { try? handle.write(contentsOf: data) }
         } else {
             try? line.data(using: .utf8)?.write(to: url, options: .atomic)

@@ -26,7 +26,10 @@ struct ClipCarouselView: View {
                         .frame(width: 0, height: 1)
                         .id(Self.startAnchorID)
 
-                    HStack(spacing: DesignTokens.cardSpacing) {
+                    // LazyHStack so a 500-item history doesn't materialize
+                    // 500 ClipCardView bodies — only the roughly-7 visible
+                    // cards and their immediate neighbours get built.
+                    LazyHStack(spacing: DesignTokens.cardSpacing) {
                         if state.items.isEmpty {
                             EmptyCard()
                         } else {

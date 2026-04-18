@@ -70,7 +70,6 @@ enum ScriptLoader {
                 bodyStart = cursor
                 break
             }
-            cursor = lineEnd
         }
         if inHeader { bodyStart = text.endIndex }
         let body = String(text[bodyStart...])
