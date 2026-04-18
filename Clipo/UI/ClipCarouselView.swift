@@ -43,18 +43,20 @@ struct ClipCarouselView: View {
                                 )
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))
-                                // SwiftUI .onDrag — the only drag path that
-                                // reliably reaches Finder. Custom AppKit
-                                // beginDraggingSession triggered
-                                // kDragIPCWithinWindow reentrancy on some
-                                // systems; SwiftUI's implementation goes
-                                // through a single IPC channel that drop
-                                // targets accept.
+                                // SwiftUI .onDrag. We intentionally do NOT
+                                // close the panel here — SwiftUI sometimes
+                                // invokes the closure speculatively on
+                                // click-like gestures (especially for
+                                // image/file cards where the user's
+                                // instinct is to "grab"), and closing the
+                                // panel from inside meant a regular click
+                                // could make Clipo disappear. The user can
+                                // close via Esc after the drop if they
+                                // want; every other drop target receives
+                                // the drag correctly while the panel
+                                // stays visible.
                                 .onDrag {
-                                    DispatchQueue.main.async {
-                                        state.appDelegate?.closePanel()
-                                    }
-                                    return DragProvider.makeProvider(for: item)
+                                    DragProvider.makeProvider(for: item)
                                 }
                                 // Native SwiftUI tap handling. Only a
                                 // single-tap variant is attached — mixing
@@ -129,7 +131,11 @@ struct ClipCarouselView: View {
                     proxy.scrollTo(Self.startAnchorID, anchor: .leading)
                     return
                 }
-                withAnimation(DesignTokens.selectSpring) {
+                // Tight ease-out beats the selectSpring (response 0.32)
+                // for rapid click-to-click navigation — the long spring
+                // let each click pile on top of an unfinished animation,
+                // making switching feel sticky.
+                withAnimation(.easeOut(duration: 0.15)) {
                     proxy.scrollTo(new, anchor: .center)
                 }
             }
