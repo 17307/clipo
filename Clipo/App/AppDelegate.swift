@@ -12,6 +12,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppState.shared.appDelegate = self
+        // Scrub any drag payload files left behind by previous sessions
+        // (successful drops leave temp files on disk; cleaning at launch
+        // keeps long-uptime caches bounded).
+        DragProvider.purgeStaleTempFiles()
 
         setupStatusBar()
         setupClipboard()

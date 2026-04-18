@@ -27,6 +27,35 @@ import UniformTypeIdentifiers
 /// specifically goes through just one of those, which is why this
 /// pattern works where direct AppKit calls did not.
 enum DragProvider {
+    /// Per-session scratch dir for drag payload files. Distinct from the
+    /// system's generic itemReplacementDirectory so we can wipe it at
+    /// launch without touching anyone else's temp files.
+    private static let stagingDirectoryName = "com.ymoon.clipo/DragPayload"
+
+    /// Wipes the staging directory. Called from AppDelegate at launch —
+    /// anything left from a previous session is garbage. Keeps the
+    /// long-lived drag cache from growing unboundedly across months of
+    /// uptime (50 drags/day × 365 days is otherwise a lot of .png /
+    /// .txt files never getting cleaned up).
+    static func purgeStaleTempFiles() {
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appending(
+            path: stagingDirectoryName,
+            directoryHint: .isDirectory
+        )
+        try? fm.removeItem(at: dir)
+    }
+
+    private static func stagingDirectory() throws -> URL {
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appending(
+            path: stagingDirectoryName,
+            directoryHint: .isDirectory
+        )
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
     /// Returns an item provider that, on demand, serialises the clip
     /// item to a temp file whose URL is handed to the drop target.
     ///
@@ -69,13 +98,14 @@ enum DragProvider {
     }
 
     private static func writeTempFile(payload: MaterializedPayload) throws -> URL {
-        let root = try FileManager.default.url(
-            for: .itemReplacementDirectory,
-            in: .userDomainMask,
-            appropriateFor: URL.temporaryDirectory,
-            create: true
-        )
-        let url = root.appending(path: payload.filename, directoryHint: .notDirectory)
+        // Each drop gets its own UUID-named subfolder so repeated drags
+        // of items that happen to share a first-line filename don't
+        // collide on-disk (and so a previous successful drop's file
+        // isn't overwritten while the target app is still reading it).
+        let session = try stagingDirectory()
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: session, withIntermediateDirectories: true)
+        let url = session.appending(path: payload.filename, directoryHint: .notDirectory)
         try payload.data.write(to: url, options: .atomic)
         return url
     }
