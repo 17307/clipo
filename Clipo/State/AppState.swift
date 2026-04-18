@@ -20,22 +20,31 @@ final class AppState {
     /// is click-sequence so that Enter-to-paste emits them in the exact
     /// sequence the user picked them. Empty means single-select mode — UI
     /// treats `selectedID` as the sole "focus" card.
-    var selectionOrder: [UUID] = []
+    ///
+    /// Every mutation rebuilds `selectionIndexMap` so lookups during
+    /// carousel renders stay O(1) — a naive `firstIndex(of:)` per card
+    /// per render was O(N×M) on big selections.
+    var selectionOrder: [UUID] = [] {
+        didSet {
+            selectionIndexMap = Dictionary(
+                uniqueKeysWithValues: selectionOrder.enumerated().map { ($1, $0 + 1) }
+            )
+        }
+    }
+    private var selectionIndexMap: [UUID: Int] = [:]
 
     /// Convenience: 2+ cards highlighted for a batch action.
     var isMultiSelecting: Bool { selectionOrder.count >= 2 }
 
-    /// Fast membership check for rendering. O(N) over selectionOrder is
-    /// fine because multi-select rarely exceeds a handful of items.
+    /// O(1) membership check for rendering.
     func isInSelection(_ id: UUID) -> Bool {
-        selectionOrder.contains(id)
+        selectionIndexMap[id] != nil
     }
 
     /// 1-based position in the paste queue; nil when not in selection.
     /// Used to draw the small stack-order chip on each selected card.
     func selectionIndex(of id: UUID) -> Int? {
-        guard let idx = selectionOrder.firstIndex(of: id) else { return nil }
-        return idx + 1
+        selectionIndexMap[id]
     }
 
     /// True while the user is holding the Option key inside the panel.
@@ -130,10 +139,17 @@ final class AppState {
         maybeKickOffOCR(for: item)
     }
 
+    /// In-flight OCR results waiting to be written back. A burst of
+    /// screenshots used to trigger one context.save() + one applyFilter
+    /// per image; we now coalesce via a 200ms debounced drain so a
+    /// 10-screenshot spam is one save + one filter pass.
+    private var pendingOCRUpdates: [UUID: String] = [:]
+    private var ocrDrainTimer: Timer?
+
     /// Spawns an off-main OCR task for new image items. No-op for anything
     /// else (text, url, files) or when the user disabled OCR. Results are
-    /// written back to the same item via MainActor + context.save() so the
-    /// new text becomes immediately searchable.
+    /// coalesced through `pendingOCRUpdates` + `ocrDrainTimer` so bursty
+    /// screenshot workflows don't thrash SwiftData.
     private func maybeKickOffOCR(for item: ClipItem) {
         guard Defaults[.ocrEnabled] else { return }
         guard item.primaryKind == .image, let data = item.imageData else { return }
@@ -144,30 +160,39 @@ final class AppState {
                 NSLog("[Clipo OCR] no text extracted for %@", id.uuidString)
                 return
             }
-            // Surface a short preview in the system log so users debugging
-            // a "search misses the image" can verify whether it's an
-            // extraction problem or a query-matching problem. `Console.app`
-            // filtered by process=Clipo shows these.
             let preview = text.prefix(80).replacingOccurrences(of: "\n", with: " ¶ ")
             NSLog("[Clipo OCR] %@ chars=%d: %@", id.uuidString, text.count, String(preview))
             await MainActor.run {
-                // The item may have been deleted or evicted by
-                // enforceHistoryLimit() while Vision was working. Either way
-                // the in-memory allItems snapshot is authoritative; write
-                // through it so a subsequent applyFilter() includes the
-                // newly-OCR'd text in search.
-                guard let stored = AppState.shared.allItems.first(where: { $0.id == id }) else {
-                    return
-                }
-                stored.ocrText = text
-                try? Storage.shared.context.save()
-                // If the user is mid-search and just typed a query that
-                // matches the freshly-OCR'd text, re-run the filter so the
-                // image surfaces without them having to retype.
-                if !AppState.shared.searchQuery.isEmpty {
-                    AppState.shared.applyFilter()
-                }
+                AppState.shared.enqueueOCRResult(id: id, text: text)
             }
+        }
+    }
+
+    /// Stash an OCR result and (re)schedule a drain. Multiple results
+    /// within 200ms end up in the same context.save() + applyFilter.
+    fileprivate func enqueueOCRResult(id: UUID, text: String) {
+        pendingOCRUpdates[id] = text
+        ocrDrainTimer?.invalidate()
+        ocrDrainTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.drainOCRUpdates() }
+        }
+    }
+
+    private func drainOCRUpdates() {
+        guard !pendingOCRUpdates.isEmpty else { return }
+        let pending = pendingOCRUpdates
+        pendingOCRUpdates.removeAll(keepingCapacity: true)
+        for (id, text) in pending {
+            if let stored = allItems.first(where: { $0.id == id }) {
+                stored.ocrText = text
+            }
+        }
+        try? context.save()
+        // If the user is mid-search and just typed a query that matches
+        // any freshly-OCR'd text, one filter pass covers every batched
+        // item at once.
+        if !searchQuery.isEmpty {
+            applyFilter()
         }
     }
 

@@ -69,7 +69,7 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
             resizeHandle.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             resizeHandle.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             resizeHandle.topAnchor.constraint(equalTo: container.topAnchor),
-            resizeHandle.heightAnchor.constraint(equalToConstant: 6),
+            resizeHandle.heightAnchor.constraint(equalToConstant: 10),
         ])
 
         contentView = container
@@ -298,9 +298,11 @@ private extension CGFloat {
     }
 }
 
-/// Transparent 6 pt strip across the top of the panel. Flips the cursor
-/// to resize-up-down when hovered and reports vertical drag deltas to the
-/// containing panel so it can grow / shrink the frame live.
+/// Thin 6 pt strip across the top of the panel with a centered 3-dot
+/// grab indicator. Flips the cursor to resize-up-down when hovered and
+/// reports vertical drag deltas to the containing panel. The dot row is
+/// what turns "you can totally resize the panel" from invisible magic
+/// into a discoverable affordance.
 private final class ResizeHandleView: NSView {
     let onDrag: (CGFloat) -> Void
     let onRelease: () -> Void
@@ -312,11 +314,28 @@ private final class ResizeHandleView: NSView {
         self.onRelease = onRelease
         super.init(frame: .zero)
         wantsLayer = true
-        // Debug-tint the handle if ever needed:
-        // layer?.backgroundColor = NSColor.red.withAlphaComponent(0.3).cgColor
     }
 
     required init?(coder: NSCoder) { fatalError("not implemented") }
+
+    override var wantsUpdateLayer: Bool { false }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        // 3 small dots, centered. Uses tertiaryLabel so it auto-adapts to
+        // both light and dark mode at a low-but-visible contrast level.
+        let dotSize: CGFloat = 3
+        let spacing: CGFloat = 4
+        let totalWidth = dotSize * 3 + spacing * 2
+        let startX = (bounds.width - totalWidth) / 2
+        let y = (bounds.height - dotSize) / 2
+        NSColor.tertiaryLabelColor.setFill()
+        for i in 0..<3 {
+            let x = startX + CGFloat(i) * (dotSize + spacing)
+            let path = NSBezierPath(ovalIn: NSRect(x: x, y: y, width: dotSize, height: dotSize))
+            path.fill()
+        }
+    }
 
     override func resetCursorRects() {
         // Entire handle shows the resize cursor.

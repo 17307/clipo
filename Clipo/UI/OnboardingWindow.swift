@@ -63,6 +63,13 @@ private struct OnboardingView: View {
     @Default(.accentColorHex) private var accentHex
     private var accent: Color { Color(hex: accentHex) ?? DesignTokens.accent }
 
+    /// Refresh the pill every time Clipo regains focus — catches the
+    /// "grant in System Settings → come back" flow without the user
+    /// needing to click Re-check.
+    private let activeNotification = NotificationCenter.default.publisher(
+        for: NSApplication.didBecomeActiveNotification
+    )
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -99,6 +106,9 @@ private struct OnboardingView: View {
         }
         .frame(width: 480, height: 540)
         .background(.regularMaterial)
+        .onReceive(activeNotification) { _ in
+            accessibilityGranted = Accessibility.isTrusted(prompt: false)
+        }
     }
 
     private var header: some View {

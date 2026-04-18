@@ -409,6 +409,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // the compiler that `panel` access is isolated.
             Task { @MainActor in self?.panel?.repositionForCurrentScreen() }
         }
+
+        // Accessibility permission: re-check whenever Clipo becomes active.
+        // This catches the common flow of "click Open Settings → grant in
+        // Privacy → ⌘Tab back to Clipo" and updates the banner / onboarding
+        // pill live instead of only on the next panel open.
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task { @MainActor in AppState.shared.recheckAccessibility() }
+        }
     }
 
     // MARK: - Modifier tracking (for ⌥N quick-paste badges)

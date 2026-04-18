@@ -332,13 +332,19 @@ private struct TextBody: View {
     let item: ClipItem
     let searchQuery: String
     let accent: Color
+    @Environment(\.colorScheme) private var colorScheme
     var body: some View {
         let raw = (item.text ?? item.title).trimmingCharacters(in: .whitespacesAndNewlines)
         // Slice around the first match (if any) so a long string whose match
         // falls past the first 600 chars still shows the highlighted word
         // instead of being truncated away.
         let snippet = Self.highlightedSnippet(from: raw, query: searchQuery)
-        let attr = SearchHighlight.attributed(snippet, query: searchQuery, accent: accent)
+        let attr = SearchHighlight.attributed(
+            snippet,
+            query: searchQuery,
+            accent: accent,
+            colorScheme: colorScheme
+        )
         Text(attr)
             .font(DesignTokens.rounded(12, weight: .regular))
             .foregroundStyle(DesignTokens.TextColor.primary)
@@ -353,19 +359,19 @@ private struct TextBody: View {
 
     /// If the match lives far into a long body, re-centre the 600-char
     /// window around it so the highlight is actually visible on the card.
-    /// Prepends "…" when we skipped text.
+    /// Prepends "…" when we skipped text. Uses .caseInsensitive on the
+    /// source directly so we skip an entire full-string lowercased() copy
+    /// per keystroke per card — big win when the item is a 10k-char blob.
     private static func highlightedSnippet(from source: String, query: String) -> String {
         let q = query.trimmingCharacters(in: .whitespaces)
         let window = 600
         if source.count <= window || q.isEmpty {
             return String(source.prefix(window))
         }
-        let lowerSource = source.lowercased()
-        let lowerQuery = q.lowercased()
-        guard let matchRange = lowerSource.range(of: lowerQuery) else {
+        guard let matchRange = source.range(of: q, options: .caseInsensitive) else {
             return String(source.prefix(window))
         }
-        let matchStart = lowerSource.distance(from: lowerSource.startIndex, to: matchRange.lowerBound)
+        let matchStart = source.distance(from: source.startIndex, to: matchRange.lowerBound)
         if matchStart < 200 { return String(source.prefix(window)) }
         let startOffset = max(0, matchStart - 80)
         let startIdx = source.index(source.startIndex, offsetBy: startOffset)
@@ -378,6 +384,7 @@ private struct URLBody: View {
     let item: ClipItem
     let searchQuery: String
     @Default(.accentColorHex) private var accentHex
+    @Environment(\.colorScheme) private var colorScheme
     var body: some View {
         let url = (item.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let components = URL(string: url)
@@ -390,18 +397,24 @@ private struct URLBody: View {
                 Text(SearchHighlight.attributed(
                     components?.host ?? "link",
                     query: searchQuery,
-                    accent: accent
+                    accent: accent,
+                    colorScheme: colorScheme
                 ))
                 .font(DesignTokens.rounded(11.5, weight: .semibold))
                 .foregroundStyle(DesignTokens.TextColor.primary)
                 .lineLimit(1)
                 Spacer()
             }
-            Text(SearchHighlight.attributed(url, query: searchQuery, accent: accent))
-                .font(DesignTokens.mono(11))
-                .foregroundStyle(DesignTokens.TextColor.secondary)
-                .lineLimit(5)
-                .truncationMode(.middle)
+            Text(SearchHighlight.attributed(
+                url,
+                query: searchQuery,
+                accent: accent,
+                colorScheme: colorScheme
+            ))
+            .font(DesignTokens.mono(11))
+            .foregroundStyle(DesignTokens.TextColor.secondary)
+            .lineLimit(5)
+            .truncationMode(.middle)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
@@ -488,6 +501,7 @@ private struct FileBody: View {
     let item: ClipItem
     let searchQuery: String
     let accent: Color
+    @Environment(\.colorScheme) private var colorScheme
     var body: some View {
         let urls = item.fileURLs
         let first = urls.first
@@ -499,7 +513,8 @@ private struct FileBody: View {
                     Text(SearchHighlight.attributed(
                         first?.lastPathComponent ?? "file",
                         query: searchQuery,
-                        accent: accent
+                        accent: accent,
+                        colorScheme: colorScheme
                     ))
                     .font(DesignTokens.rounded(12, weight: .semibold))
                     .foregroundStyle(DesignTokens.TextColor.primary)
@@ -517,11 +532,16 @@ private struct FileBody: View {
                 Spacer()
             }
             if let path = first?.deletingLastPathComponent().path {
-                Text(SearchHighlight.attributed(path, query: searchQuery, accent: accent))
-                    .font(DesignTokens.mono(10))
-                    .foregroundStyle(DesignTokens.TextColor.tertiary)
-                    .lineLimit(3)
-                    .truncationMode(.middle)
+                Text(SearchHighlight.attributed(
+                    path,
+                    query: searchQuery,
+                    accent: accent,
+                    colorScheme: colorScheme
+                ))
+                .font(DesignTokens.mono(10))
+                .foregroundStyle(DesignTokens.TextColor.tertiary)
+                .lineLimit(3)
+                .truncationMode(.middle)
             }
             Spacer(minLength: 0)
         }
