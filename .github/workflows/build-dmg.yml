@@ -26,6 +26,12 @@ concurrency:
 jobs:
   build:
     name: Build & Package (arm64)
+    # Explicit minimum perms so this workflow keeps working even if the
+    # repo's default GITHUB_TOKEN scope is later tightened to read-only.
+    # `contents: write` is the permission softprops/action-gh-release
+    # needs to create / update a Release on `v*` tags.
+    permissions:
+      contents: write
     # Apple Silicon runner with a Swift 6.1 toolchain. `macos-14` tops
     # out at Xcode 16.2 (Swift 6.0) which can't resolve
     # KeyboardShortcuts ≥2.4.0 — that package declares Swift tools
