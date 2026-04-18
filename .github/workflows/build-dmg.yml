@@ -1,0 +1,103 @@
+name: Build macOS DMG (Apple Silicon)
+
+# Builds an arm64-only Clipo.app + clipocli and packages them into a
+# `.dmg` on every push to `main` and every `v*` tag. Tagged builds also
+# create a GitHub Release with the DMG attached; plain-main builds are
+# uploaded as workflow artifacts for 30 days.
+#
+# Signing: ad-hoc only (`-`). End users will see Gatekeeper's "unknown
+# developer" warning on first launch; they can right-click → Open to
+# bypass. Switch to a Developer ID certificate + notarization by adding
+# the relevant secrets (MACOS_CERTIFICATE, APPLE_ID, etc.) and extending
+# the workflow — out of scope for v0.x.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  # Newer pushes cancel in-flight runs on the same ref. Saves CI minutes
+  # when several commits land in quick succession.
+  group: build-dmg-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Package (arm64)
+    # macos-14 and macos-latest are Apple Silicon runners on GitHub's
+    # hosted pool. Pin to macos-14 so a future macos-latest bump can't
+    # silently change the toolchain under us.
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so release-notes generation can diff tags.
+          fetch-depth: 0
+
+      - name: Show toolchain versions
+        run: |
+          sw_vers
+          uname -m
+          xcodebuild -version
+          swift --version
+
+      - name: Select Xcode
+        # The macos-14 runner has multiple Xcode versions pre-installed;
+        # pin to 15.x so project.yml's `xcodeVersion: "15.0"` requirement
+        # is satisfied and builds stay reproducible.
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Clipo.xcodeproj
+        # We commit the generated project but re-generate from project.yml
+        # on CI so the build matches the source of truth.
+        run: xcodegen generate
+
+      - name: Resolve Swift package dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project Clipo.xcodeproj \
+            -scheme Clipo
+
+      - name: Build Clipo.app + clipocli (arm64 Release)
+        env:
+          ARCHS: arm64
+        run: bash scripts/build-release.sh
+
+      - name: Create DMG
+        run: bash scripts/make-dmg.sh
+
+      - name: Read version from project.yml
+        id: version
+        run: |
+          V=$(sed -n 's/.*MARKETING_VERSION: *"\([^"]*\)".*/\1/p' project.yml | head -1)
+          echo "version=${V:-0.0.0}" >> "$GITHUB_OUTPUT"
+          # Rename DMG to include the architecture so downstream tooling
+          # can tell Apple-Silicon builds apart from future universal ones.
+          mv "build/Clipo-${V:-0.0.0}.dmg" "build/Clipo-${V:-0.0.0}-arm64.dmg"
+
+      - name: Upload DMG as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Clipo-${{ steps.version.outputs.version }}-arm64
+          path: build/Clipo-*-arm64.dmg
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release (tagged builds only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/Clipo-*-arm64.dmg
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          # Draft first, so you can eyeball the auto-generated notes
+          # before hitting "Publish" on github.com.
+          draft: true

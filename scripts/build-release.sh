@@ -9,6 +9,11 @@
 # distribution with Gatekeeper + notarization, set DEVELOPMENT_TEAM and
 # override CODE_SIGN_IDENTITY to a Developer ID Application cert.
 #
+# Architectures: by default Xcode picks ARCHS_STANDARD (universal:
+# arm64 + x86_64 on recent macOS). Set ARCHS to override — e.g.
+# `ARCHS=arm64 bash scripts/build-release.sh` builds an Apple
+# Silicon-only binary (what CI does).
+#
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -21,6 +26,15 @@ CLI_PATH="$PRODUCT_DIR/clipocli"
 
 echo "→ cleaning $BUILD_DIR"
 rm -rf "$BUILD_DIR"
+
+# Build an optional ARCHS override into an args array so it's absent
+# (→ Xcode's default universal build) when ARCHS is unset, and expands
+# cleanly to two xcodebuild settings when set. Using `${ARCHS:+...}`
+# inline would split on spaces inside the expansion and break quoting.
+ARCH_ARGS=()
+if [ -n "${ARCHS:-}" ]; then
+    ARCH_ARGS=(ARCHS="$ARCHS" ONLY_ACTIVE_ARCH=NO)
+fi
 
 # Regenerate the Xcode project from project.yml so we're always building
 # against the source of truth.
@@ -39,6 +53,7 @@ xcodebuild \
     CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY:--}" \
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGNING_ALLOWED=NO \
+    "${ARCH_ARGS[@]}" \
     build >/tmp/clipo-release-app.log 2>&1 || {
     tail -80 /tmp/clipo-release-app.log
     echo "✗ Clipo.app build failed (log: /tmp/clipo-release-app.log)"
@@ -55,6 +70,7 @@ xcodebuild \
     CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY:--}" \
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGNING_ALLOWED=NO \
+    "${ARCH_ARGS[@]}" \
     build >/tmp/clipo-release-cli.log 2>&1 || {
     tail -80 /tmp/clipo-release-cli.log
     echo "✗ clipocli build failed (log: /tmp/clipo-release-cli.log)"
