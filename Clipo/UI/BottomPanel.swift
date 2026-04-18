@@ -83,11 +83,13 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
 
     fileprivate func applyHeightDelta(_ delta: CGFloat) {
         guard isPresented, let screen = screen else { return }
-        // Dragging UP (delta > 0 from mouseDragged locationInWindow change)
-        // should grow the panel since our origin is anchored to the bottom
-        // of the screen.
+        // AppKit's locationInWindow.y grows as the mouse moves UP the
+        // screen, so delta > 0 means the user is dragging the handle up.
+        // Our panel is anchored to the bottom edge — moving the top edge
+        // up grows the panel — so we ADD the delta, not subtract it. The
+        // previous code inverted this and made drag direction feel wrong.
         let current = dragHeight ?? frame.height
-        let proposed = (current - delta)
+        let proposed = (current + delta)
             .clamped(to: panelMinHeight...panelMaxHeight)
         dragHeight = proposed
         let visibleFrame = screen.visibleFrame
