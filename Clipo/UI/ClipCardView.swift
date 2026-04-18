@@ -129,11 +129,7 @@ private struct CardHeader: View {
     }
 
     private var sourceName: String {
-        guard let bundle = item.sourceAppBundleID,
-              let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle) else {
-            return "Unknown"
-        }
-        return FileManager.default.displayName(atPath: url.path)
+        AppIconCache.appName(forBundleID: item.sourceAppBundleID)
     }
 
 }

@@ -18,6 +18,15 @@ enum AppIconCache {
         return c
     }()
 
+    /// Display names keyed by bundle id. Card headers render the app name
+    /// on every visible card, so serve it from memory instead of calling
+    /// LaunchServices + FileManager per body evaluation.
+    private static let nameCache: NSCache<NSString, NSString> = {
+        let c = NSCache<NSString, NSString>()
+        c.countLimit = 512
+        return c
+    }()
+
     private static let missingAppIcon: NSImage = {
         NSImage(systemSymbolName: "app.dashed", accessibilityDescription: nil)
             ?? NSImage(size: NSSize(width: 16, height: 16))
@@ -37,6 +46,23 @@ enum AppIconCache {
         img.size = NSSize(width: size, height: size)
         store(img, forKey: key, size: size)
         return img
+    }
+
+    /// Localised display name for an app bundle id, cached per lookup so
+    /// CardHeader doesn't hit LaunchServices per render. Falls back to the
+    /// bundle id itself if the app can't be located (uninstalled, removed).
+    static func appName(forBundleID bundleID: String?) -> String {
+        guard let bundleID else { return "Unknown" }
+        let key = bundleID as NSString
+        if let cached = nameCache.object(forKey: key) { return cached as String }
+        let name: String
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            name = FileManager.default.displayName(atPath: url.path)
+        } else {
+            name = bundleID
+        }
+        nameCache.setObject(name as NSString, forKey: key)
+        return name
     }
 
     /// Icon for a file URL, keyed by extension so same-type files share.

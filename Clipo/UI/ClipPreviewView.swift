@@ -37,11 +37,10 @@ struct ClipPreviewView: View {
 
     private static func lookupSourceApp(item: ClipItem) -> (name: String, icon: NSImage)? {
         guard let id = item.sourceAppBundleID,
-              let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id),
               let icon = AppIconCache.icon(forBundleID: id, size: 22) else {
             return nil
         }
-        return (FileManager.default.displayName(atPath: url.path), icon)
+        return (AppIconCache.appName(forBundleID: id), icon)
     }
 
     // MARK: - Header
