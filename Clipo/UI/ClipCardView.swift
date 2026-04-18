@@ -6,6 +6,11 @@ struct ClipCardView: View {
     let item: ClipItem
     let index: Int
     let isSelected: Bool
+    /// 1-based position in the paste stack when this card is part of a
+    /// multi-selection. Nil means the card is not currently multi-selected.
+    /// Computed by the carousel parent so this view doesn't have to observe
+    /// AppState directly (would cause cascading re-renders on isOptionDown).
+    let multiPosition: Int?
 
     @State private var isHovering = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -16,6 +21,7 @@ struct ClipCardView: View {
     // nested `IndexBadge` view watches that flag now.
 
     private var accent: Color { Color(hex: accentHex) ?? DesignTokens.accent }
+    private var isMultiSelected: Bool { multiPosition != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -36,32 +42,47 @@ struct ClipCardView: View {
                 .fill(isHovering ? DesignTokens.Surface.cardFillHover : DesignTokens.Surface.cardFill)
         )
         .overlay(
+            // Accent tint overlay when part of a multi-selection — it reads
+            // as a "marked for batch action" state distinct from the single-
+            // focus highlight (which is carried by the shadow + scale).
+            RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)
+                .fill(accent.opacity(isMultiSelected ? 0.14 : 0))
+                .allowsHitTesting(false)
+        )
+        .overlay(
             // Constant 1pt border — the accent glow (shadow below) does the
             // work of signalling selection. Jumping to 1.5pt on select adds
             // a mechanical "pop wider" feel that Paste-style cards avoid.
             RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)
                 .strokeBorder(borderColor, lineWidth: 1)
         )
+        .overlay(alignment: .topTrailing) {
+            if let position = multiPosition {
+                StackPositionChip(position: position, accent: accent)
+                    .padding(6)
+            }
+        }
         .scaleEffect(scaleFactor)
         .shadow(
             // Unselected: a subtle drop so cards lift from the chrome.
             // Dark mode swaps to a brighter fill-based halo since a dark
-            // shadow on a dark surface would disappear.
-            color: isSelected ? accent.opacity(0.30) : Color(
-                light: .black.opacity(0.10),
-                dark: .black.opacity(0.45)
-            ),
-            radius: isSelected ? 14 : 5,
-            x: 0, y: isSelected ? 6 : 2
+            // shadow on a dark surface would disappear. Multi-select
+            // suppresses the halo so a whole group doesn't glow.
+            color: isSelected && !isMultiSelected
+                ? accent.opacity(0.30)
+                : Color(light: .black.opacity(0.10), dark: .black.opacity(0.45)),
+            radius: isSelected && !isMultiSelected ? 14 : 5,
+            x: 0, y: isSelected && !isMultiSelected ? 6 : 2
         )
         .animation(reduceMotion ? nil : DesignTokens.selectSpring, value: isSelected)
+        .animation(reduceMotion ? nil : DesignTokens.selectSpring, value: isMultiSelected)
         .animation(reduceMotion ? nil : DesignTokens.hoverAnim, value: isHovering)
         .onHover { isHovering = $0 }
         .pointingHand()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
         .accessibilityHint("Item \(index). Press Return to paste, Space to preview.")
-        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
+        .accessibilityAddTraits(isSelected || isMultiSelected ? [.isSelected, .isButton] : .isButton)
     }
 
     /// Human-readable summary for VoiceOver. Composes kind + source + a
@@ -90,12 +111,15 @@ struct ClipCardView: View {
     }
 
     private var scaleFactor: CGFloat {
-        if isSelected { return 1.04 }
+        // Suppress the single-select bounce while multi-selecting so the
+        // group reads as a cohesive block rather than one card leaping out.
+        if isSelected && !isMultiSelected { return 1.04 }
         if isHovering { return 1.015 }
         return 1.0
     }
 
     private var borderColor: Color {
+        if isMultiSelected { return accent.opacity(0.7) }
         if isSelected { return accent.opacity(0.9) }
         if isHovering { return DesignTokens.Surface.cardBorderHover }
         return DesignTokens.Surface.cardBorder
@@ -167,6 +191,30 @@ private struct CardHeader: View {
         AppIconCache.appName(forBundleID: item.sourceAppBundleID)
     }
 
+}
+
+// MARK: - Stack position chip (shown when card is part of a multi-selection)
+
+/// Small accent capsule showing the 1-based position in the paste queue.
+/// Appears top-right of any multi-selected card; lets the user see at a
+/// glance which item will be pasted first, second, third, etc.
+private struct StackPositionChip: View {
+    let position: Int
+    let accent: Color
+
+    var body: some View {
+        Text("\(position)")
+            .font(.system(size: 11, weight: .bold, design: .rounded))
+            .foregroundStyle(.white)
+            .frame(minWidth: 20, minHeight: 20)
+            .padding(.horizontal, 5)
+            .background(
+                Capsule()
+                    .fill(accent)
+                    .shadow(color: .black.opacity(0.18), radius: 2, x: 0, y: 1)
+            )
+            .accessibilityLabel("Stack position \(position)")
+    }
 }
 
 // MARK: - Index badge (subscribes to AppState.isOptionDown in isolation)

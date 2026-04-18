@@ -37,45 +37,17 @@ struct ClipCarouselView: View {
                                 ClipCardView(
                                     item: item,
                                     index: index + 1,
-                                    isSelected: state.selectedID == item.id
+                                    isSelected: state.selectedID == item.id,
+                                    multiPosition: state.selectionIndex(of: item.id)
                                 )
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))
                                 .overlay(
-                                    ClickCatcher { clickCount in
-                                        if clickCount >= 2 {
-                                            state.paste(item)
-                                        } else {
-                                            state.selectedID = item.id
-                                            focus = .carousel
-                                            state.appDelegate?.closePreview()
-                                        }
+                                    ClickCatcher { clickCount, mods in
+                                        handleClick(on: item, clickCount: clickCount, mods: mods)
                                     }
                                 )
-                                .contextMenu {
-                                    Button(titled("Paste as Plain Text", shortcut: .pastePlain)) {
-                                        state.pasteAsPlainText(item)
-                                    }
-                                    Button(titled("Paste with Formatting", shortcut: .pasteFormatted)) {
-                                        state.pasteWithFormatting(item)
-                                    }
-                                    Button(titled("Copy Again", shortcut: .copyAgain)) {
-                                        state.copyAgain(item)
-                                    }
-                                    Divider()
-                                    pinMenu(for: item)
-                                    if let board = item.pinboard {
-                                        Button("Remove from \(board.name)") {
-                                            state.move(item, to: nil)
-                                        }
-                                    }
-                                    Divider()
-                                    scriptMenu(for: item)
-                                    Divider()
-                                    Button("Delete", role: .destructive) {
-                                        state.delete(item)
-                                    }
-                                }
+                                .contextMenu { contextMenu(for: item) }
                             }
                         }
                     }
@@ -128,39 +100,199 @@ struct ClipCarouselView: View {
             .focusable()
             .focused($focus, equals: .carousel)
             .focusEffectDisabled()
-            .onKeyPress(.leftArrow)  { state.selectPrevious(); return .handled }
-            .onKeyPress(.rightArrow) { state.selectNext();     return .handled }
-            .onKeyPress(.upArrow)    { focus = .search;        return .handled }
-            .onKeyPress(.return)     { state.pasteSelected();  return .handled }
             .onKeyPress { press in
-                guard press.modifiers.isEmpty, let char = press.characters.first else {
-                    return .ignored
-                }
-                // Space → open the preview window for the selected item.
-                if char == " " {
-                    if let item = state.selectedItem ?? state.items.first {
-                        state.appDelegate?.showPreview(item: item)
-                    }
-                    return .handled
-                }
-                // Any printable char (letters, digits, allowed punctuation)
-                // routes to the search field. Quick-paste is ⌥1–⌥9 only —
-                // plain digits type into search like any other key.
-                if char.isLetter || char.isNumber || "-_.@/:".contains(char) {
-                    let chars = press.characters
-                    focus = .search
-                    DispatchQueue.main.async {
-                        // Mutating searchQuery triggers the SearchField's
-                        // onChange which already calls applyFilter(); calling
-                        // it explicitly here would double the work.
-                        state.searchQuery.append(chars)
-                    }
-                    return .handled
-                }
-                return .ignored
+                handleCarouselKey(press)
             }
         }
         .frame(height: DesignTokens.cardHeight + 24)
+    }
+
+    /// Context menu builder. When the right-clicked card is part of an
+    /// active multi-selection, the menu switches to batch actions; otherwise
+    /// it shows the single-item menu. Right-clicking a card that isn't in
+    /// the selection uses the single-item menu but doesn't clear the
+    /// selection — Mac convention is lenient here, and the user can always
+    /// hit Esc to clear.
+    @ViewBuilder
+    private func contextMenu(for item: ClipItem) -> some View {
+        if state.isMultiSelecting && state.isInSelection(item.id) {
+            let count = state.selectionOrder.count
+            Button("Paste Stack (\(count) items)") {
+                state.pasteStack()
+            }
+            Divider()
+            multiPinMenu()
+            if hasAnyPinnedInSelection {
+                Button("Remove All from Pinboard") {
+                    state.moveSelection(to: nil)
+                }
+            }
+            Divider()
+            Button("Delete \(count) Items", role: .destructive) {
+                state.deleteSelection()
+            }
+        } else {
+            Button(titled("Paste as Plain Text", shortcut: .pastePlain)) {
+                state.pasteAsPlainText(item)
+            }
+            Button(titled("Paste with Formatting", shortcut: .pasteFormatted)) {
+                state.pasteWithFormatting(item)
+            }
+            Button(titled("Copy Again", shortcut: .copyAgain)) {
+                state.copyAgain(item)
+            }
+            Divider()
+            pinMenu(for: item)
+            if let board = item.pinboard {
+                Button("Remove from \(board.name)") {
+                    state.move(item, to: nil)
+                }
+            }
+            Divider()
+            scriptMenu(for: item)
+            Divider()
+            Button("Delete", role: .destructive) {
+                state.delete(item)
+            }
+        }
+    }
+
+    /// True if any item in the current multi-selection is already pinned
+    /// to a Pinboard — drives whether "Remove All from Pinboard" is offered.
+    private var hasAnyPinnedInSelection: Bool {
+        let ids = Set(state.selectionOrder)
+        return state.items.contains { ids.contains($0.id) && $0.pinboard != nil }
+    }
+
+    /// Pin-to submenu for the batch case — same list of pinboards, but
+    /// the chosen destination is applied to every multi-selected card.
+    @ViewBuilder
+    private func multiPinMenu() -> some View {
+        Menu("Pin All to") {
+            if state.pinboards.isEmpty {
+                Text("No pinboards yet")
+            } else {
+                ForEach(state.pinboards) { board in
+                    Button(board.name) {
+                        state.moveSelection(to: board)
+                    }
+                }
+            }
+            Divider()
+            Button("Manage Pinboards…") {
+                state.appDelegate?.openSettings()
+            }
+        }
+    }
+
+    /// Unified key handler for the carousel. Shift-arrows extend the multi-
+    /// selection from the current anchor, plain arrows navigate single-focus,
+    /// ⌘A selects all, backspace deletes the current (or multi) selection,
+    /// Space opens the preview, printable chars route to search.
+    private func handleCarouselKey(_ press: KeyPress) -> KeyPress.Result {
+        // ⌘A → select all visible cards.
+        if press.modifiers.contains(.command),
+           press.characters.lowercased() == "a" {
+            state.selectAll()
+            return .handled
+        }
+        switch press.key {
+        case .leftArrow:
+            if press.modifiers.contains(.shift) {
+                extendSelection(direction: -1)
+            } else {
+                state.selectPrevious()
+            }
+            return .handled
+        case .rightArrow:
+            if press.modifiers.contains(.shift) {
+                extendSelection(direction: 1)
+            } else {
+                state.selectNext()
+            }
+            return .handled
+        case .upArrow:
+            focus = .search
+            return .handled
+        case .return:
+            state.pasteSelected()
+            return .handled
+        case .delete:
+            // Backspace / delete-above-return. Only consume when a multi
+            // selection exists so the key still works in the search field.
+            if !state.selectionOrder.isEmpty {
+                state.deleteSelection()
+                return .handled
+            }
+            return .ignored
+        default:
+            break
+        }
+        // Space → preview (only when unmodified).
+        guard press.modifiers.isEmpty, let char = press.characters.first else {
+            return .ignored
+        }
+        if char == " " {
+            if let item = state.selectedItem ?? state.items.first {
+                state.appDelegate?.showPreview(item: item)
+            }
+            return .handled
+        }
+        // Printable → route to search field.
+        if char.isLetter || char.isNumber || "-_.@/:".contains(char) {
+            let chars = press.characters
+            focus = .search
+            DispatchQueue.main.async {
+                state.searchQuery.append(chars)
+            }
+            return .handled
+        }
+        return .ignored
+    }
+
+    /// Shift+arrow selection extension. Picks the card one step over in the
+    /// given direction and hands off to AppState.extendSelection so click
+    /// and keyboard agree on anchor semantics.
+    private func extendSelection(direction: Int) {
+        guard let anchor = state.selectedID,
+              let idx = state.items.firstIndex(where: { $0.id == anchor }) else {
+            return
+        }
+        let next = idx + direction
+        guard next >= 0, next < state.items.count else { return }
+        state.extendSelection(to: state.items[next].id)
+    }
+
+    /// Dispatches a carousel card click into the correct selection /
+    /// paste path based on modifiers:
+    /// - double click: paste (single item or stack if multi-selecting)
+    /// - ⇧ + click: extend selection from the current anchor
+    /// - ⌘ + click: toggle this card in/out of the multi-selection
+    /// - plain click: clear any multi-selection and single-focus this card
+    private func handleClick(on item: ClipItem, clickCount: Int, mods: NSEvent.ModifierFlags) {
+        if clickCount >= 2 {
+            if state.isMultiSelecting {
+                state.pasteStack()
+            } else {
+                state.paste(item)
+            }
+            return
+        }
+        if mods.contains(.shift) {
+            state.extendSelection(to: item.id)
+            focus = .carousel
+            return
+        }
+        if mods.contains(.command) {
+            state.toggleInSelection(item.id)
+            focus = .carousel
+            return
+        }
+        // Plain click — collapse back to single-select on this card.
+        state.clearMultiSelection()
+        state.selectedID = item.id
+        focus = .carousel
+        state.appDelegate?.closePreview()
     }
 
     /// Suffix a menu item's title with the current binding's glyph so the

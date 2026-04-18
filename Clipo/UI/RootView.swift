@@ -277,14 +277,26 @@ private struct SearchFieldView: View {
 // MARK: - Footer hint bar
 
 private struct FooterHintBar: View {
+    @Environment(AppState.self) private var state
+    @Default(.accentColorHex) private var accentHex
+    private var accent: Color { Color(hex: accentHex) ?? DesignTokens.accent }
+
     var body: some View {
         // Pure decorative keyboard hints. VoiceOver users already get the
         // same shortcuts announced via the cards' accessibilityHint, so
         // hide this whole row to avoid repeating the glyphs on every pane
         // landing.
-        hintsBody.accessibilityHidden(true)
+        Group {
+            if state.isMultiSelecting {
+                multiSelectBody
+            } else {
+                hintsBody
+            }
+        }
+        .accessibilityHidden(true)
     }
 
+    /// Default hint row when there's no batch selection.
     private var hintsBody: some View {
         HStack(spacing: 14) {
             Hint(icon: "arrow.up.arrow.down", label: "Switch Focus")
@@ -294,6 +306,37 @@ private struct FooterHintBar: View {
             Hint(text: "⌥1-9", label: "Quick Paste")
             Spacer()
             Hint(icon: "escape", label: "Close")
+        }
+        .font(DesignTokens.rounded(10, weight: .medium))
+        .foregroundStyle(DesignTokens.TextColor.tertiary)
+    }
+
+    /// Shown when 2+ cards are in the multi-selection. Surfaces the
+    /// actions available on the stack so users don't have to guess.
+    private var multiSelectBody: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(accent)
+                    .frame(width: 6, height: 6)
+                Text("\(state.selectionOrder.count) selected")
+                    .font(DesignTokens.rounded(10, weight: .semibold))
+                    .foregroundStyle(DesignTokens.TextColor.primary)
+            }
+            Hint(icon: "return", label: "Paste Stack")
+            Hint(icon: "delete.left", label: "Delete")
+            Hint(text: "⌘A", label: "Select All")
+            Hint(icon: "escape", label: "Clear")
+            Spacer()
+            Button {
+                state.clearMultiSelection()
+            } label: {
+                Text("Clear")
+                    .font(DesignTokens.rounded(10, weight: .semibold))
+                    .foregroundStyle(accent)
+            }
+            .buttonStyle(.plain)
+            .pointingHand()
         }
         .font(DesignTokens.rounded(10, weight: .medium))
         .foregroundStyle(DesignTokens.TextColor.tertiary)

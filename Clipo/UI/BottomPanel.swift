@@ -182,7 +182,13 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
                 return
             case 53:  // Escape
                 MainActor.assumeIsolated {
-                    self.close()
+                    // First Escape clears a multi-selection without closing
+                    // the panel; a second press (nothing selected) closes.
+                    if AppState.shared.isMultiSelecting {
+                        AppState.shared.clearMultiSelection()
+                    } else {
+                        self.close()
+                    }
                 }
                 return
             default:

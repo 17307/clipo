@@ -83,6 +83,17 @@ final class ClipboardEngine {
         changeCount = pasteboard.changeCount
     }
 
+    /// Write an arbitrary text blob to the pasteboard with Clipo's own
+    /// `.fromClipo` marker so the poll loop doesn't re-ingest it as a new
+    /// copy event. Used by the paste-stack path which synthesises a
+    /// combined payload from multiple history items.
+    func writeText(_ text: String) {
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        pasteboard.setString("", forType: .fromClipo)
+        changeCount = pasteboard.changeCount
+    }
+
     func clear() {
         guard Defaults[.clearSystemClipboard] else { return }
         pasteboard.clearContents()

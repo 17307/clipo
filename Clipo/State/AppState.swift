@@ -16,6 +16,28 @@ final class AppState {
     var selectedID: UUID?
     var searchQuery: String = ""
 
+    /// Ordered IDs of items the user explicitly multi-selected. The order
+    /// is click-sequence so that Enter-to-paste emits them in the exact
+    /// sequence the user picked them. Empty means single-select mode — UI
+    /// treats `selectedID` as the sole "focus" card.
+    var selectionOrder: [UUID] = []
+
+    /// Convenience: 2+ cards highlighted for a batch action.
+    var isMultiSelecting: Bool { selectionOrder.count >= 2 }
+
+    /// Fast membership check for rendering. O(N) over selectionOrder is
+    /// fine because multi-select rarely exceeds a handful of items.
+    func isInSelection(_ id: UUID) -> Bool {
+        selectionOrder.contains(id)
+    }
+
+    /// 1-based position in the paste queue; nil when not in selection.
+    /// Used to draw the small stack-order chip on each selected card.
+    func selectionIndex(of id: UUID) -> Int? {
+        guard let idx = selectionOrder.firstIndex(of: id) else { return nil }
+        return idx + 1
+    }
+
     /// True while the user is holding the Option key inside the panel.
     /// Used to show ⌥1–⌥9 quick-paste badges over each card.
     var isOptionDown: Bool = false
@@ -179,6 +201,16 @@ final class AppState {
             nextSelected = nextItems.first?.id
         }
 
+        // Drop any multi-selected IDs that filtered out of view — a chip
+        // sitting invisibly off-screen would confuse "N selected" counts.
+        if !selectionOrder.isEmpty {
+            let visible = Set(nextItems.map(\.id))
+            let pruned = selectionOrder.filter { visible.contains($0) }
+            if pruned.count != selectionOrder.count {
+                selectionOrder = pruned
+            }
+        }
+
         // Publish items / selection inside a transaction that disables
         // implicit animations. SwiftUI's ForEach otherwise animates the
         // diff (cards sliding into place) when the list re-sorts during
@@ -298,6 +330,12 @@ final class AppState {
     }
 
     func pasteSelected() {
+        // Multi-select takes priority — plain Enter on N selected cards
+        // triggers the paste stack, not the single-item paste.
+        if !selectionOrder.isEmpty {
+            pasteStack()
+            return
+        }
         let item = selectedItem ?? items.first
         guard let item else { return }
         paste(item)
@@ -431,5 +469,137 @@ final class AppState {
     func selectByIndex(_ index: Int) {
         guard index >= 0, index < items.count else { return }
         selectedID = items[index].id
+    }
+
+    // MARK: - Multi-selection
+
+    /// ⌘+click: add/remove a single card from the selection. Repeated
+    /// toggles cycle the card in and out without affecting other members.
+    /// After toggling we move `selectedID` to this item so keyboard focus
+    /// follows the user's last intent.
+    func toggleInSelection(_ id: UUID) {
+        if let idx = selectionOrder.firstIndex(of: id) {
+            selectionOrder.remove(at: idx)
+        } else {
+            selectionOrder.append(id)
+        }
+        selectedID = id
+    }
+
+    /// Shift+click / Shift+arrow: replace the selection with the range
+    /// between the current anchor and `id`, filling in **carousel order**
+    /// (left → right = newest → oldest) so the paste sequence matches the
+    /// user's visual intuition.
+    func extendSelection(to id: UUID) {
+        guard let anchor = selectedID,
+              let a = items.firstIndex(where: { $0.id == anchor }),
+              let b = items.firstIndex(where: { $0.id == id }) else {
+            // No anchor — treat as plain select.
+            selectionOrder = [id]
+            selectedID = id
+            return
+        }
+        let lo = min(a, b), hi = max(a, b)
+        let indices = a <= b ? Array(lo...hi) : Array((lo...hi).reversed())
+        selectionOrder = indices.map { items[$0].id }
+        selectedID = id
+    }
+
+    /// ⌘A: pick up every currently visible card in current sort order.
+    func selectAll() {
+        selectionOrder = items.map(\.id)
+        selectedID = items.first?.id
+    }
+
+    /// First Escape press (or any non-modified click) clears the multi
+    /// selection and drops back to single-focus mode on the last anchor.
+    func clearMultiSelection() {
+        selectionOrder.removeAll(keepingCapacity: false)
+    }
+
+    // MARK: - Batch actions
+
+    /// Pastes every multi-selected card in click order, separated by \n.
+    /// Non-text kinds (image, color) are dropped silently — the UI hides
+    /// the ⏎ hint whenever the selection is exclusively image/color, so
+    /// this is a safety net rather than a user-visible branch.
+    func pasteStack() {
+        let ordered = selectionOrder.compactMap { id in
+            items.first { $0.id == id }
+        }
+        guard !ordered.isEmpty else { return }
+
+        // Pastable kinds: plain text, URLs, files. Files contribute their
+        // POSIX paths (matches what the engine's single-file paste emits).
+        let pastable = ordered.filter { item in
+            switch item.primaryKind {
+            case .text, .url, .file: return true
+            case .image, .color:     return false
+            }
+        }
+        guard !pastable.isEmpty else { return }
+
+        let combined = pastable.map { item -> String in
+            if !item.fileURLs.isEmpty {
+                return item.fileURLs.map(\.path).joined(separator: "\n")
+            }
+            return item.text ?? item.title
+        }.joined(separator: "\n")
+
+        // Bump recency on every pasted item, first-clicked landing at the
+        // top of allItems so the carousel reflects "this was the latest
+        // action" afterwards. Reverse-iterate so pastable[0] ends at front.
+        let now = Date.now
+        for item in pastable {
+            item.lastCopiedAt = now
+            item.numberOfCopies += 1
+        }
+        try? context.save()
+        for item in pastable.reversed() {
+            if let idx = allItems.firstIndex(where: { $0.id == item.id }) {
+                allItems.remove(at: idx)
+            }
+            allItems.insert(item, at: 0)
+        }
+        applyFilter()
+
+        // Write the combined blob to the pasteboard with Clipo's own marker
+        // so the engine doesn't re-ingest it as a new item.
+        ClipboardEngine.shared.writeText(combined)
+        clearMultiSelection()
+
+        appDelegate?.closePanel()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+            Paster.paste()
+            AppState.shared.appDelegate?.flashStatusIcon()
+        }
+    }
+
+    /// Delete every multi-selected card in one transaction. Unlike the
+    /// single-item delete path, we reload() at the end because multiple
+    /// removals may change the tail of allItems in ways that are messier
+    /// to reconcile than just re-fetching.
+    func deleteSelection() {
+        guard !selectionOrder.isEmpty else { return }
+        let ids = Set(selectionOrder)
+        for item in allItems where ids.contains(item.id) {
+            context.delete(item)
+        }
+        try? context.save()
+        clearMultiSelection()
+        reload()
+    }
+
+    /// Move every multi-selected card to (or out of) a Pinboard at once.
+    func moveSelection(to board: Pinboard?) {
+        guard !selectionOrder.isEmpty else { return }
+        let ids = Set(selectionOrder)
+        for item in allItems where ids.contains(item.id) {
+            item.pinboard = board
+        }
+        try? context.save()
+        // Selection survives — user often moves several items then wants
+        // to move them again or continue pinning. Drop only on Esc.
+        applyFilter()
     }
 }

@@ -229,6 +229,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 AppState.shared.searchQuery = ""
                 AppState.shared.recheckAccessibility()
                 AppState.shared.isOptionDown = NSEvent.modifierFlags.contains(.option)
+                // Stale multi-selections from the previous panel session are
+                // never what the user wants on reopen.
+                AppState.shared.clearMultiSelection()
                 AppState.shared.applyFilter()
                 // Always land on the first card on reopen — applyFilter only
                 // resets selectedID when the old selection fell out of the
