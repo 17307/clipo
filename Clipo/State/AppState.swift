@@ -169,8 +169,7 @@ final class AppState {
         if searchQuery.isEmpty {
             nextItems = filtered
         } else {
-            let q = searchQuery.lowercased()
-            nextItems = filtered.filter { $0.title.lowercased().contains(q) }
+            nextItems = Self.search(filtered, query: searchQuery, mode: Defaults[.searchMode])
         }
 
         let nextSelected: UUID?
@@ -192,6 +191,69 @@ final class AppState {
                 selectedID = nextSelected
             }
         }
+    }
+
+    /// Three modes share the same preprocessing (lowercase both sides) and
+    /// differ only in the matcher:
+    ///
+    /// - `.exact`    matches when the title, lowercased, equals the query.
+    /// - `.contains` matches when the title contains the query verbatim.
+    /// - `.fuzzy`    runs a lightweight subsequence scorer: every query
+    ///               character must appear in order, and items score higher
+    ///               when the matches are clustered near the start of the
+    ///               title. Re-ranked output beats a filtered-but-unsorted
+    ///               list for "I half-remember what I copied" searches.
+    static func search(_ items: [ClipItem], query: String, mode: SearchMode) -> [ClipItem] {
+        let q = query.lowercased()
+        guard !q.isEmpty else { return items }
+        switch mode {
+        case .exact:
+            return items.filter { $0.title.lowercased() == q }
+        case .contains:
+            return items.filter { $0.title.lowercased().contains(q) }
+        case .fuzzy:
+            let scored: [(ClipItem, Int)] = items.compactMap { item in
+                let title = item.title.lowercased()
+                guard let score = fuzzyScore(query: q, in: title) else { return nil }
+                return (item, score)
+            }
+            // Higher score = better match. Stable sort keeps the original
+            // recency order for ties.
+            return scored.sorted { $0.1 > $1.1 }.map(\.0)
+        }
+    }
+
+    /// Subsequence match + cluster bonus. Returns nil when any query char
+    /// can't be found in order. Keeps it honest (no false positives) while
+    /// still tolerating typos within a word.
+    private static func fuzzyScore(query: String, in target: String) -> Int? {
+        let tChars = Array(target)
+        let qChars = Array(query)
+        guard !qChars.isEmpty, !tChars.isEmpty else { return nil }
+        var score = 0
+        var lastMatch = -1
+        var firstMatch = -1
+        var t = 0
+        for q in qChars {
+            var found = false
+            while t < tChars.count {
+                if tChars[t] == q {
+                    if firstMatch == -1 { firstMatch = t }
+                    // Adjacency bonus — matches next to each other score
+                    // much higher than matches spread across the title.
+                    if lastMatch == t - 1 { score += 5 } else { score += 1 }
+                    lastMatch = t
+                    t += 1
+                    found = true
+                    break
+                }
+                t += 1
+            }
+            if !found { return nil }
+        }
+        // Prefer matches that start early in the title.
+        score += max(0, 10 - firstMatch)
+        return score
     }
 
     private func refreshPinboards() {

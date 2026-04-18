@@ -408,6 +408,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        // Re-evaluate the visible list when the user switches search mode
+        // (exact / contains / fuzzy). In-memory only — no DB round-trip.
+        Task { [weak self] in
+            for await _ in Defaults.updates(.searchMode, initial: false) {
+                guard self != nil else { return }
+                AppState.shared.applyFilter()
+            }
+        }
+
         // Drop the compiled-regex cache when the user edits patterns.
         Task { [weak self] in
             for await _ in Defaults.updates(.ignoreRegexp, initial: false) {
