@@ -52,6 +52,35 @@ struct ClipCardView: View {
         .animation(reduceMotion ? nil : DesignTokens.hoverAnim, value: isHovering)
         .onHover { isHovering = $0 }
         .pointingHand()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
+        .accessibilityHint("Item \(index). Press Return to paste, Space to preview.")
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
+    }
+
+    /// Human-readable summary for VoiceOver. Composes kind + source + a
+    /// truncated content preview. Kept under ~140 chars so the speech
+    /// doesn't drag on when navigating card-by-card.
+    private var accessibilityDescription: String {
+        let kind: String = {
+            switch item.primaryKind {
+            case .text:  return "Text"
+            case .url:   return "Link"
+            case .image: return "Image"
+            case .color: return "Color"
+            case .file:  return "File"
+            }
+        }()
+        let source = AppIconCache.appName(forBundleID: item.sourceAppBundleID)
+        let time = SharedFormatters.relativeTime.localizedString(
+            for: item.lastCopiedAt, relativeTo: .now
+        )
+        let preview = item.title.shortened(to: 120)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if preview.isEmpty {
+            return "\(kind) from \(source), \(time)"
+        }
+        return "\(kind) from \(source), \(time): \(preview)"
     }
 
     private var scaleFactor: CGFloat {

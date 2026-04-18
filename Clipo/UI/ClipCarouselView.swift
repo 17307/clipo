@@ -228,6 +228,12 @@ struct ClipCarouselView: View {
 private struct EmptyCard: View {
     @Default(.ignoreEvents) private var isPaused
 
+    var accessibilityText: String {
+        isPaused
+            ? "Clipboard monitoring is paused. Resume in Settings, Advanced."
+            : "Nothing copied yet. Copy something with Command C to get started."
+    }
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: isPaused ? "pause.circle" : "doc.on.clipboard")
@@ -256,5 +262,7 @@ private struct EmptyCard: View {
                     style: StrokeStyle(lineWidth: 1, dash: [5, 4])
                 )
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
     }
 }

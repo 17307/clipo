@@ -266,6 +266,10 @@ final class AppState {
         // 3. Let the window server deliver the focus change, then synthesize ⌘V.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
             Paster.paste()
+            // Silent confirmation — the panel is gone by now, so a brief
+            // menu-bar checkmark tells the user "the paste fired" without
+            // forcing a popup or notification.
+            AppState.shared.appDelegate?.flashStatusIcon()
         }
     }
 
@@ -276,6 +280,7 @@ final class AppState {
         bumpRecency(item)
         ClipboardEngine.shared.copy(item)
         appDelegate?.closePanel()
+        appDelegate?.flashStatusIcon()
     }
 
     /// Promote an item to "most recent" status so it moves to the front of

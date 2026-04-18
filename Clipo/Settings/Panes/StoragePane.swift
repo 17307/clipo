@@ -4,6 +4,7 @@ import SwiftUI
 
 struct StoragePane: View {
     @Default(.maxHistorySize) private var maxHistorySize
+    @Default(.maxItemBytes) private var maxItemBytes
     @Default(.enabledPasteboardTypes) private var enabledTypes
     @Default(.sortBy) private var sortBy
 
@@ -35,6 +36,26 @@ struct StoragePane: View {
                 Toggle("Text", isOn: typeGroupBinding(Self.textTypes))
                 Toggle("Images", isOn: typeGroupBinding(Self.imageTypes))
                 Toggle("Files", isOn: typeGroupBinding(Self.fileTypes))
+            }
+
+            Section("Large items") {
+                HStack {
+                    Text("Skip items larger than")
+                    Spacer()
+                    Picker("", selection: $maxItemBytes) {
+                        Text("5 MB").tag(5 * 1024 * 1024)
+                        Text("10 MB").tag(10 * 1024 * 1024)
+                        Text("20 MB").tag(20 * 1024 * 1024)
+                        Text("50 MB").tag(50 * 1024 * 1024)
+                        Text("No limit").tag(0)
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .frame(width: 110)
+                }
+                Text("Copies whose total payload exceeds this size are not recorded. Prevents a huge PDF or document paste from bloating the history.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Sort by") {

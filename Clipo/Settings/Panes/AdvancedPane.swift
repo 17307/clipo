@@ -169,7 +169,7 @@ struct AdvancedPane: View {
 
     private func resetAll() {
         Defaults.reset(
-            .checkInterval, .maxHistorySize, .enabledPasteboardTypes,
+            .checkInterval, .maxHistorySize, .maxItemBytes, .enabledPasteboardTypes,
             .ignoredPasteboardTypes, .ignoredApps, .ignoreAllAppsExceptListed,
             .ignoreRegexp, .ignoreEvents,
             .panelHeight, .panelBottomInset,

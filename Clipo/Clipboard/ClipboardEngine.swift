@@ -134,6 +134,15 @@ final class ClipboardEngine {
 
         guard !contents.isEmpty else { return }
 
+        // Drop monstrously large items outright. A 50 MB PDF or a giant RTF
+        // blob gets the same treatment as "no text" — we never surface it.
+        // Prevents SwiftData slowness and NSCache memory spikes.
+        let cap = Defaults[.maxItemBytes]
+        if cap > 0 {
+            let totalBytes = contents.reduce(0) { $0 + ($1.value?.count ?? 0) }
+            if totalBytes > cap { return }
+        }
+
         let clip = ClipItem(contents: contents)
         clip.sourceAppBundleID = sourceApp?.bundleIdentifier
         clip.title = clip.generateTitle()

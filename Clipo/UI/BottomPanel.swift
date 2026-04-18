@@ -60,6 +60,30 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         isPresented ? close() : open()
     }
 
+    /// Called by AppDelegate when screens are added/removed/reconfigured
+    /// (e.g. the user unplugs the external display the panel was anchored
+    /// to). Re-anchors the panel to the screen where the mouse currently
+    /// lives, or silently closes if no screen is available.
+    func repositionForCurrentScreen() {
+        guard isPresented else { return }
+        guard let screen = NSScreen.forMouse() else {
+            close()
+            return
+        }
+        let visibleFrame = screen.visibleFrame
+        let height = Defaults[.panelHeight]
+        let bottomInset = Defaults[.panelBottomInset]
+        let newFrame = NSRect(
+            x: visibleFrame.minX,
+            y: visibleFrame.minY + bottomInset,
+            width: visibleFrame.width,
+            height: height
+        )
+        // No animation — the screen change itself is jarring enough; snapping
+        // into place is more trustworthy than a second slide.
+        setFrame(newFrame, display: true)
+    }
+
     func open() {
         guard let screen = NSScreen.forMouse() else { return }
         let visibleFrame = screen.visibleFrame

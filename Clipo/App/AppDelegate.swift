@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppState.shared.installDefaultPinboardsIfNeeded()
         IPCServer.shared.start()
         warmSourceAppIconCache()
+        setupScreenChangeObserver()
 
         // Prompt for Accessibility permission (required for CGEvent paste) on first launch.
         if !Accessibility.isTrusted(prompt: false) {
@@ -57,6 +58,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let image = NSImage(systemSymbolName: name, accessibilityDescription: "Clipo")
         image?.isTemplate = true
         return image
+    }
+
+    /// Briefly replace the menu bar icon with a checkmark so a just-fired
+    /// paste/copy gets silent visual confirmation even though the panel is
+    /// already gone by the time the user looks up. ~220ms is long enough to
+    /// register in peripheral vision and short enough to feel incidental.
+    private var statusFlashToken: UUID?
+    func flashStatusIcon() {
+        guard let button = statusItem.button else { return }
+        let token = UUID()
+        statusFlashToken = token
+        let flash = NSImage(systemSymbolName: "checkmark.circle.fill",
+                            accessibilityDescription: "Pasted")
+        flash?.isTemplate = true
+        button.image = flash
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { [weak self] in
+            guard let self, self.statusFlashToken == token else { return }
+            button.image = self.currentStatusIcon()
+            self.statusFlashToken = nil
+        }
     }
 
     @objc private func statusBarClicked(_ sender: NSStatusBarButton) {
@@ -336,6 +357,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             for id in bundleIDs {
                 _ = AppIconCache.icon(forBundleID: id, size: 20)
             }
+        }
+    }
+
+    // MARK: - Screen change
+
+    /// If the user unplugs the display the panel is pinned to, the panel can
+    /// end up on a frame that no longer exists (invisible, dead). Listen for
+    /// screen reconfigurations and re-anchor to whatever screen the mouse is
+    /// currently over.
+    private func setupScreenChangeObserver() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            // The notification is delivered on the main queue, but the
+            // closure signature is Sendable — hop via MainActor to satisfy
+            // the compiler that `panel` access is isolated.
+            Task { @MainActor in self?.panel?.repositionForCurrentScreen() }
         }
     }
 

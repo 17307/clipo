@@ -279,6 +279,14 @@ private struct SearchFieldView: View {
 
 private struct FooterHintBar: View {
     var body: some View {
+        // Pure decorative keyboard hints. VoiceOver users already get the
+        // same shortcuts announced via the cards' accessibilityHint, so
+        // hide this whole row to avoid repeating the glyphs on every pane
+        // landing.
+        hintsBody.accessibilityHidden(true)
+    }
+
+    private var hintsBody: some View {
         HStack(spacing: 14) {
             Hint(icon: "arrow.up.arrow.down", label: "Switch Focus")
             Hint(icon: "arrow.left.and.right", label: "Navigate")

@@ -44,6 +44,10 @@ extension Defaults.Keys {
     // Clipboard engine
     static let checkInterval = Key<TimeInterval>("checkInterval", default: 0.5)
     static let maxHistorySize = Key<Int>("maxHistorySize", default: 500)
+    /// Per-item byte ceiling. Anything whose total content bytes exceed this
+    /// is silently dropped instead of being ingested. Protects SwiftData +
+    /// NSCache from a 50 MB-PDF paste freezing the app. Default 20 MB.
+    static let maxItemBytes = Key<Int>("maxItemBytes", default: 20 * 1024 * 1024)
     static let enabledPasteboardTypes = Key<Set<NSPasteboard.PasteboardType>>(
         "enabledPasteboardTypes",
         default: [.fileURL, .html, .png, .rtf, .string, .tiff]
