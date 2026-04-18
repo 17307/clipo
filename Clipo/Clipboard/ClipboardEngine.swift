@@ -58,9 +58,17 @@ final class ClipboardEngine {
         pasteboard.clearContents()
 
         let contents = removeFormatting ? clearFormatting(item.contents) : item.contents
+        let fileURLs = item.fileURLs
+        let hasFileURLs = !fileURLs.isEmpty
 
+        // Write every non-fileURL rep directly. For file items we also
+        // skip the stored .string type here and re-derive it below, so
+        // pasting into a text editor emits the POSIX paths rather than
+        // whatever string representation (often just the filename) the
+        // source app happened to put on the pasteboard.
         for content in contents {
-            guard content.type != NSPasteboard.PasteboardType.fileURL.rawValue else { continue }
+            if content.type == NSPasteboard.PasteboardType.fileURL.rawValue { continue }
+            if hasFileURLs, content.type == NSPasteboard.PasteboardType.string.rawValue { continue }
             pasteboard.setData(content.value, forType: NSPasteboard.PasteboardType(content.type))
         }
 
@@ -73,6 +81,15 @@ final class ClipboardEngine {
         }
         if !fileURLItems.isEmpty {
             pasteboard.writeObjects(fileURLItems)
+            // Synthesise a full POSIX-path string rep so pasting a file
+            // item into TextEdit / VS Code / Slack yields the actual
+            // "/Users/…/foo.txt" path instead of just "foo.txt".
+            // Finder ignores .string when .fileURL is present, so file-
+            // manager paste behaviour is unchanged.
+            let paths = fileURLs.map(\.path).joined(separator: "\n")
+            if !paths.isEmpty {
+                pasteboard.setString(paths, forType: .string)
+            }
         }
 
         // Mark that the next pasteboard change originated from Clipo itself.
