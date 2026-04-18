@@ -5,6 +5,7 @@ import SwiftUI
 struct StoragePane: View {
     @Default(.maxHistorySize) private var maxHistorySize
     @Default(.maxItemBytes) private var maxItemBytes
+    @Default(.ocrEnabled) private var ocrEnabled
     @Default(.enabledPasteboardTypes) private var enabledTypes
     @Default(.sortBy) private var sortBy
 
@@ -36,6 +37,13 @@ struct StoragePane: View {
                 Toggle("Text", isOn: typeGroupBinding(Self.textTypes))
                 Toggle("Images", isOn: typeGroupBinding(Self.imageTypes))
                 Toggle("Files", isOn: typeGroupBinding(Self.fileTypes))
+            }
+
+            Section("Images") {
+                Toggle("Extract text from images (OCR)", isOn: $ocrEnabled)
+                Text("Runs Apple's on-device text recognition against newly-copied images so the words visible inside them become searchable. Fully local — never leaves your Mac. Images over 10 MP are skipped for performance.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Large items") {

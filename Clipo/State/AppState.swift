@@ -127,6 +127,41 @@ final class AppState {
         try? context.save()
         enforceHistoryLimit()
         reload()
+        maybeKickOffOCR(for: item)
+    }
+
+    /// Spawns an off-main OCR task for new image items. No-op for anything
+    /// else (text, url, files) or when the user disabled OCR. Results are
+    /// written back to the same item via MainActor + context.save() so the
+    /// new text becomes immediately searchable.
+    private func maybeKickOffOCR(for item: ClipItem) {
+        guard Defaults[.ocrEnabled] else { return }
+        guard item.primaryKind == .image, let data = item.imageData else { return }
+        let id = item.id
+        let maxPixels = Defaults[.ocrMaxPixels]
+        Task.detached(priority: .utility) {
+            guard let text = await OCRService.extractText(from: data, maxPixels: maxPixels) else {
+                return
+            }
+            await MainActor.run {
+                // The item may have been deleted or evicted by
+                // enforceHistoryLimit() while Vision was working. Either way
+                // the in-memory allItems snapshot is authoritative; write
+                // through it so a subsequent applyFilter() includes the
+                // newly-OCR'd text in search.
+                guard let stored = AppState.shared.allItems.first(where: { $0.id == id }) else {
+                    return
+                }
+                stored.ocrText = text
+                try? Storage.shared.context.save()
+                // If the user is mid-search and just typed a query that
+                // matches the freshly-OCR'd text, re-run the filter so the
+                // image surfaces without them having to retype.
+                if !AppState.shared.searchQuery.isEmpty {
+                    AppState.shared.applyFilter()
+                }
+            }
+        }
     }
 
     func delete(_ item: ClipItem) {
@@ -240,13 +275,16 @@ final class AppState {
         guard !q.isEmpty else { return items }
         switch mode {
         case .exact:
+            // Exact still matches against title only — matching OCR text
+            // verbatim is almost never what "exact" means to a user.
             return items.filter { $0.title.lowercased() == q }
         case .contains:
-            return items.filter { $0.title.lowercased().contains(q) }
+            return items.filter { $0.searchHaystack().contains(q) }
         case .fuzzy:
             let scored: [(ClipItem, Int)] = items.compactMap { item in
-                let title = item.title.lowercased()
-                guard let score = fuzzyScore(query: q, in: title) else { return nil }
+                guard let score = fuzzyScore(query: q, in: item.searchHaystack()) else {
+                    return nil
+                }
                 return (item, score)
             }
             // Higher score = better match. Stable sort keeps the original

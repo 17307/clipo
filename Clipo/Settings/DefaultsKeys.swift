@@ -48,6 +48,14 @@ extension Defaults.Keys {
     /// is silently dropped instead of being ingested. Protects SwiftData +
     /// NSCache from a 50 MB-PDF paste freezing the app. Default 20 MB.
     static let maxItemBytes = Key<Int>("maxItemBytes", default: 20 * 1024 * 1024)
+
+    // OCR — run on-device text recognition against newly-copied images so
+    // the words visible in them become searchable. Default on.
+    static let ocrEnabled = Key<Bool>("ocrEnabled", default: true)
+    /// Pixel-count cap for OCR candidates. Images over this are skipped so
+    /// a massive screenshot doesn't hold an OCR job slot for seconds.
+    /// Hidden default — power users can tweak via `defaults write`.
+    static let ocrMaxPixels = Key<Int>("ocrMaxPixels", default: 10_000_000)
     static let enabledPasteboardTypes = Key<Set<NSPasteboard.PasteboardType>>(
         "enabledPasteboardTypes",
         default: [.fileURL, .html, .png, .rtf, .string, .tiff]

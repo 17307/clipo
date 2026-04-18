@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		02F2FE48B68032CCEA69FDA7 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C25B335E84C818548408151 /* OCRService.swift */; };
 		060E31DCFBA392B5F98D1CD0 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = A4AEACB69C61A7CF152DA7A4 /* KeyboardShortcuts */; };
 		1DCDFB7E1167EAF6233747EC /* StoragePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910C85943BDFF5718D8B74C3 /* StoragePane.swift */; };
 		1E701EE77849E496A119CA2F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7336251A3C7E88ADABD838 /* AppDelegate.swift */; };
@@ -85,6 +86,7 @@
 		7DF6DF078F7F6C216E06B3AC /* AppIconCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconCache.swift; sourceTree = "<group>"; };
 		7F5DFD89E8996C8057C0F8C7 /* ScriptLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLoader.swift; sourceTree = "<group>"; };
 		812A14A88A78F239E61A16FB /* AdvancedPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedPane.swift; sourceTree = "<group>"; };
+		8C25B335E84C818548408151 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
 		8DFF28B4DB3BB62BE4AE39D7 /* ClipItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipItem.swift; sourceTree = "<group>"; };
 		8EC88D21543F50E84CBF0027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8F5B746C2241AEA7708F9489 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 			children = (
 				3E79299DBC2419FF23F99DC0 /* Accessibility.swift */,
 				52C815B2FA6DC58FEFEEF1E9 /* ClipboardEngine.swift */,
+				8C25B335E84C818548408151 /* OCRService.swift */,
 				58DCFDA0EB87CDC5890F15AA /* Paster.swift */,
 			);
 			path = Clipboard;
@@ -442,6 +445,7 @@
 				924D454E480D46B0077184B4 /* IgnorePane.swift in Sources */,
 				973AB7E0E718E3F4F175ADDD /* LaunchAtLogin.swift in Sources */,
 				7663237019E12F9AA1C690A6 /* NSPasteboardType+Clipo.swift in Sources */,
+				02F2FE48B68032CCEA69FDA7 /* OCRService.swift in Sources */,
 				D7E1B9DF14557812A33780DD /* Paster.swift in Sources */,
 				B000BBD39BD98520AC84BFA5 /* Pinboard.swift in Sources */,
 				3C299404B92F2DC7BB58A801 /* PinboardsPane.swift in Sources */,

@@ -19,6 +19,10 @@ final class ClipItem {
     var sourceAppBundleID: String?
     var title: String = ""
     var pinShortcut: String?
+    /// Text extracted from this item's image bytes by OCRService, if any.
+    /// Populated asynchronously after ingest (see AppState.add). Optional +
+    /// default nil keeps the SwiftData lightweight-migration path happy.
+    var ocrText: String?
 
     @Relationship(deleteRule: .cascade, inverse: \ClipContent.item)
     var contents: [ClipContent] = []
@@ -167,6 +171,16 @@ final class ClipItem {
         }()
         Self.textCache.setObject(result as NSString, forKey: key)
         return result
+    }
+
+    /// Concatenated lowercased text used by the Search engine. Combines the
+    /// display title with any OCR'd text so users can search inside copied
+    /// images by the words visible in them.
+    func searchHaystack() -> String {
+        if let ocr = ocrText, !ocr.isEmpty {
+            return (title + "\n" + ocr).lowercased()
+        }
+        return title.lowercased()
     }
 
     func generateTitle() -> String {
