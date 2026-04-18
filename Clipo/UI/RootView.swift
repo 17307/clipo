@@ -155,6 +155,7 @@ private struct TabChip: View {
     let action: () -> Void
 
     @State private var hovering = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: action) {
@@ -181,8 +182,8 @@ private struct TabChip: View {
         .buttonStyle(.plain)
         .pointingHand()
         .onHover { hovering = $0 }
-        .animation(DesignTokens.hoverAnim, value: hovering)
-        .animation(DesignTokens.selectSpring, value: isSelected)
+        .animation(reduceMotion ? nil : DesignTokens.hoverAnim, value: hovering)
+        .animation(reduceMotion ? nil : DesignTokens.selectSpring, value: isSelected)
     }
 
     /// Built-in filters show an SF Symbol; user pinboards show a colored

@@ -147,8 +147,10 @@ struct ClipCarouselView: View {
                     let chars = press.characters
                     focus = .search
                     DispatchQueue.main.async {
+                        // Mutating searchQuery triggers the SearchField's
+                        // onChange which already calls applyFilter(); calling
+                        // it explicitly here would double the work.
                         state.searchQuery.append(chars)
-                        state.refresh()
                     }
                     return .handled
                 }
@@ -244,9 +246,10 @@ private struct EmptyCard: View {
                 .fill(Color.white.opacity(0.5))
         )
         .overlay(
+            // Dashed border needs to read at a glance — 0.10 felt like a ghost.
             RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)
                 .strokeBorder(
-                    Color.black.opacity(0.10),
+                    Color.black.opacity(0.18),
                     style: StrokeStyle(lineWidth: 1, dash: [5, 4])
                 )
         )

@@ -95,7 +95,7 @@ private struct CardHeader: View {
             if showSourceIcon {
                 sourceIcon
                     .frame(width: 14, height: 14)
-                    .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 Text(sourceName)
                     .font(DesignTokens.rounded(10.5, weight: .medium))
                     .foregroundStyle(DesignTokens.TextColor.secondary)

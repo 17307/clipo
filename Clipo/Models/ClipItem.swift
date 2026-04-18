@@ -170,7 +170,11 @@ final class ClipItem {
     }
 
     func generateTitle() -> String {
-        guard image == nil else { return "" }
+        // Avoid decoding the bitmap during ingest — a presence check on the
+        // raw bytes is enough to know "this item is an image, don't compute
+        // a textual title for it." The NSImage decode happens lazily when a
+        // card actually renders.
+        guard imageData == nil else { return "" }
         return previewableText
             .shortened(to: 1_000)
             .trimmingCharacters(in: .whitespacesAndNewlines)

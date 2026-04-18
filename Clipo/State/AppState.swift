@@ -83,18 +83,21 @@ final class AppState {
     // MARK: - History operations
 
     func add(_ item: ClipItem) {
-        // Dedup — if an existing recent item supersedes the new one, just
-        // bump its lastCopiedAt. Only scan the most-recent window so we
-        // don't pull the whole history on every paste in a large DB.
-        var descriptor = FetchDescriptor<ClipItem>(
-            sortBy: [SortDescriptor(\.lastCopiedAt, order: .reverse)]
-        )
-        descriptor.fetchLimit = 50
-        if let existing = (try? context.fetch(descriptor))?.first(where: { $0.supersedes(item) }) {
+        // Dedup — if an existing recent item supersedes the new one, bump
+        // its lastCopiedAt in place. `allItems` is the same sorted snapshot
+        // we'd otherwise fetch, so scan it directly and avoid a SwiftData
+        // round-trip on every copy event.
+        if let existing = allItems.prefix(50).first(where: { $0.supersedes(item) }) {
             existing.lastCopiedAt = .now
             existing.numberOfCopies += 1
             try? context.save()
-            reload()
+            // Promote in-place so the duplicate moves to the front without a
+            // full re-fetch (same trick bumpRecency uses after paste).
+            if let idx = allItems.firstIndex(where: { $0.id == existing.id }) {
+                allItems.remove(at: idx)
+            }
+            allItems.insert(existing, at: 0)
+            applyFilter()
             return
         }
 
