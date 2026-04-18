@@ -51,6 +51,11 @@ final class AppState {
     /// Used to show ⌥1–⌥9 quick-paste badges over each card.
     var isOptionDown: Bool = false
 
+    /// True for ~1.8s after a paste-stack attempt with no pastable items
+    /// (e.g. selection was only images / colors). FooterHintBar watches
+    /// this and swaps in a "No text to paste" message.
+    var flashStackError: Bool = false
+
     /// Cached script list. Loaded once at launch (plus on-demand refresh
     /// from the Scripts settings pane) so the right-click menu doesn't hit
     /// disk on every open.
@@ -590,9 +595,10 @@ final class AppState {
     // MARK: - Batch actions
 
     /// Pastes every multi-selected card in click order, separated by \n.
-    /// Non-text kinds (image, color) are dropped silently — the UI hides
-    /// the ⏎ hint whenever the selection is exclusively image/color, so
-    /// this is a safety net rather than a user-visible branch.
+    /// Non-text kinds (image, color) are filtered out because the merged
+    /// string form wouldn't carry them faithfully. When the selection is
+    /// ENTIRELY non-text we beep + flash the footer hint bar instead of
+    /// silently no-op'ing, so the user knows their action had no target.
     func pasteStack() {
         let ordered = selectionOrder.compactMap { id in
             items.first { $0.id == id }
@@ -607,7 +613,16 @@ final class AppState {
             case .image, .color:     return false
             }
         }
-        guard !pastable.isEmpty else { return }
+        guard !pastable.isEmpty else {
+            NSSound.beep()
+            flashStackError = true
+            // Auto-clear the banner after 1.8s so it doesn't linger.
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 1_800_000_000)
+                self?.flashStackError = false
+            }
+            return
+        }
 
         let combined = pastable.map { item -> String in
             if !item.fileURLs.isEmpty {

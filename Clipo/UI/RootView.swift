@@ -287,13 +287,34 @@ private struct FooterHintBar: View {
         // hide this whole row to avoid repeating the glyphs on every pane
         // landing.
         Group {
-            if state.isMultiSelecting {
+            if state.flashStackError {
+                errorBody
+            } else if state.isMultiSelecting {
                 multiSelectBody
             } else {
                 hintsBody
             }
         }
         .accessibilityHidden(true)
+        .animation(.easeOut(duration: 0.2), value: state.flashStackError)
+    }
+
+    /// Flash shown for ~1.8s when the user hits ⏎ on a multi-selection
+    /// that contained no pastable items (only images/colors).
+    private var errorBody: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.orange)
+            Text("No text to paste in this selection")
+                .font(DesignTokens.rounded(11, weight: .semibold))
+                .foregroundStyle(DesignTokens.TextColor.primary)
+            Text("Only text, URLs, and file paths can be stacked. Images and colors paste one at a time.")
+                .font(DesignTokens.rounded(10))
+                .foregroundStyle(DesignTokens.TextColor.secondary)
+                .lineLimit(1)
+            Spacer()
+        }
     }
 
     /// Default hint row when there's no batch selection.

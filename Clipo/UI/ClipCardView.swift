@@ -278,6 +278,23 @@ private struct CardFooter: View {
                 .font(DesignTokens.rounded(10, weight: .medium))
                 .foregroundStyle(DesignTokens.TextColor.tertiary)
             Spacer(minLength: 4)
+            // Images that finished OCR advertise it with a small chip so
+            // users know "this screenshot is also searchable by its
+            // contents" — otherwise the feature is invisible until
+            // someone happens to search for the right word.
+            if item.primaryKind == .image, let ocr = item.ocrText, !ocr.isEmpty {
+                HStack(spacing: 2) {
+                    Image(systemName: "text.viewfinder")
+                        .font(.system(size: 8, weight: .semibold))
+                    Text("OCR")
+                        .font(DesignTokens.rounded(9, weight: .bold))
+                }
+                .foregroundStyle(DesignTokens.TextColor.secondary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(Color.primary.opacity(0.06)))
+                .help("Recognised \(ocr.count) chars of text — searchable")
+            }
             if let stat = statText {
                 Text(stat)
                     .font(DesignTokens.mono(9.5, weight: .semibold))

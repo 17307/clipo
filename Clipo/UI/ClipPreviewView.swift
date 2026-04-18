@@ -401,15 +401,16 @@ private struct OCRTextSection: View {
             .pointingHand()
 
             if expanded {
-                ScrollView {
-                    Text(text)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(DesignTokens.TextColor.primary)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 14)
-                }
+                // NSTextView-backed scroller — a 50KB recognised-text blob
+                // in a plain SwiftUI Text() has to lay out every glyph up
+                // front, which stalls the main thread on expand. NSTextView
+                // is lazy + diff-friendly and already handles this in the
+                // main preview view.
+                ScrollableTextView(
+                    text: text,
+                    font: .monospacedSystemFont(ofSize: 12, weight: .regular),
+                    insets: NSSize(width: 18, height: 14)
+                )
                 .frame(maxHeight: 160)
             }
         }
