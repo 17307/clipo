@@ -158,7 +158,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Only togglePanel is truly global — the others are window-local and
         // matched inside BottomPanel.sendEvent so they don't eat keystrokes
         // system-wide (which would break e.g. the ⌫ key in other apps).
-        KeyboardShortcuts.onKeyUp(for: .togglePanel) { [weak self] in
+        //
+        // Fire on keyDown, not keyUp — on keyUp the panel doesn't start
+        // opening until the user RELEASES the modifier combo, which feels
+        // like a ~100-200ms lag between press and visible response.
+        KeyboardShortcuts.onKeyDown(for: .togglePanel) { [weak self] in
             self?.togglePanel()
         }
     }

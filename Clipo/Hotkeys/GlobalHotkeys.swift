@@ -1,8 +1,8 @@
 import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
-    // Global — actually registered via KeyboardShortcuts.onKeyUp so it can
-    // fire from anywhere (other apps included).
+    // Global — registered via KeyboardShortcuts.onKeyDown so the panel
+    // starts sliding the instant the combo is pressed, not when it's released.
     static let togglePanel = Self("togglePanel", default: .init(.v, modifiers: [.command, .shift]))
 
     // Window-local — NOT registered with onKeyDown. KeyboardShortcuts is
