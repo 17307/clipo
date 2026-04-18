@@ -46,11 +46,21 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Select Xcode
-        # The macos-14 runner has multiple Xcode versions pre-installed;
-        # pin to 15.x so project.yml's `xcodeVersion: "15.0"` requirement
-        # is satisfied and builds stay reproducible.
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      - name: Select latest Xcode 16.x
+        # xcodegen's generated project.pbxproj uses Xcode 16's
+        # objectVersion (77), which Xcode 15 can't read ("future Xcode
+        # project file format"). Pick the highest Xcode 16.x available
+        # on the runner instead of hardcoding a specific point release.
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then
+            echo "::error::No Xcode 16.x installed on this runner."
+            ls /Applications/ | grep -i xcode
+            exit 1
+          fi
+          echo "Selecting $XCODE"
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
 
       - name: Install XcodeGen
         run: brew install xcodegen

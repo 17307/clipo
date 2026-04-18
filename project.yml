@@ -5,7 +5,7 @@ options:
     macOS: "14.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
-  xcodeVersion: "15.0"
+  xcodeVersion: "16.0"
 
 settings:
   base:
