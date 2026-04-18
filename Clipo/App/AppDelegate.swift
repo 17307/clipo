@@ -229,10 +229,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 AppState.shared.searchQuery = ""
                 AppState.shared.recheckAccessibility()
                 AppState.shared.isOptionDown = NSEvent.modifierFlags.contains(.option)
-                // applyFilter repoints selectedID to items.first if the
-                // previous selection fell out of the visible set, so no
-                // redundant selectedID write needed here.
                 AppState.shared.applyFilter()
+                // Always land on the first card on reopen — applyFilter only
+                // resets selectedID when the old selection fell out of the
+                // visible set, which isn't what we want here.
+                AppState.shared.selectedID = AppState.shared.items.first?.id
                 AppState.shared.openToken = UUID()
             }
             panel.open()
