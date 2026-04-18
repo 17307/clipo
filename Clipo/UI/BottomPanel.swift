@@ -10,6 +10,15 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
     /// Set while a PreviewPanel is on top of us; suppresses auto-close on resignKey.
     var isShowingPreview = false
 
+    /// Set while a drag-out session is live (see AppDelegate.pollDragStart).
+    /// The panel's content view is the drag source: if resignKey closes the
+    /// window mid-drag (because the drop target momentarily takes key
+    /// focus), the NSHostingView deallocates and Esc-to-cancel loses the
+    /// host it'd bounce back to. This flag keeps the window alive for the
+    /// same reason `isShowingPreview` does — another privileged state
+    /// where auto-close would destroy work in progress.
+    var isDraggingOut = false
+
     init(onClose: @escaping () -> Void, @ViewBuilder view: () -> Content) {
         self.onClose = onClose
 
@@ -282,8 +291,11 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
     override func resignKey() {
         super.resignKey()
         // Auto-close when the user clicks somewhere else — but don't close
-        // if we only lost key because our own PreviewPanel just took it.
-        if isPresented && !isShowingPreview {
+        // if we only lost key because our own PreviewPanel just took it,
+        // or because a drag-out is in flight and the drop target
+        // momentarily took key focus (closing would dealloc the drag
+        // source view and break Esc-to-cancel).
+        if isPresented && !isShowingPreview && !isDraggingOut {
             close()
         }
     }

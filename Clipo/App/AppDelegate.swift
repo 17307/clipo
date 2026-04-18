@@ -311,6 +311,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard NSEvent.pressedMouseButtons != 0 else { return }
             let current = NSEvent.mouseLocation
             if hypot(current.x - start.x, current.y - start.y) > 8 {
+                self.panel?.isDraggingOut = true
                 self.panel?.alphaValue = 0
                 self.pollDragEnd(token: token, attempt: 0)
                 return
@@ -320,11 +321,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func pollDragEnd(token: Int, attempt: Int) {
-        // 10s cap — a drag shouldn't last this long. If it somehow
-        // does, restore alpha so the user never ends up with an
-        // invisible panel.
-        guard attempt < 400 else {
+        // 30s cap — drags usually end in under 2s but cross-monitor drops
+        // over a slow-syncing cloud-backed Finder can genuinely take
+        // longer. Firing the restore while the mouse is still held
+        // pops the panel back up mid-drag, so we err towards a high
+        // ceiling and log the timeout so we notice if it ever fires in
+        // the wild (would suggest a stuck poll or a user workflow the
+        // cap is too low for).
+        guard attempt < 1200 else {
+            NSLog("[Clipo] drag-out poll timed out after 30s; forcing panel restore")
             panel?.alphaValue = 1
+            panel?.isDraggingOut = false
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) { [weak self] in
@@ -332,6 +339,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if NSEvent.pressedMouseButtons == 0 {
                 // Drag ended (drop or ⎋ cancel) — bring the panel back.
                 self.panel?.alphaValue = 1
+                self.panel?.isDraggingOut = false
                 return
             }
             self.pollDragEnd(token: token, attempt: attempt + 1)
