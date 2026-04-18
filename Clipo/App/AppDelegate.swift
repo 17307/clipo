@@ -282,41 +282,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// match — prevents two overlapping sessions racing each other.
     private var dragPollToken = 0
 
-    /// Called from a card's `.onDrag` closure. Begins a short polling
-    /// loop that closes the panel the moment the cursor has moved > 8pt
-    /// (real drag) while still holding the button. Release without
-    /// movement (click / speculative `.onDrag` firing) stops polling
-    /// silently — the panel stays open.
+    /// Called from a card's `.onDrag` closure. Polls mouse state:
+    /// - Movement > 8pt while button held → real drag. Fade the panel
+    ///   (alphaValue = 0) so WindowServer skips it during composite.
+    ///   The NSWindow itself stays in the window list and the SwiftUI
+    ///   view hierarchy is intact, so the drag source remains alive,
+    ///   and system-level drag cancel (⎋) still works.
+    /// - Button released without substantial motion → click or
+    ///   speculative `.onDrag` firing, stop polling silently.
     ///
-    /// We poll instead of listening via NSEvent monitors because once
-    /// an AppKit drag session is live, WindowServer routes mouseDragged
-    /// events into the drag subsystem directly and the app-level
-    /// monitors never see them. Polling `NSEvent.mouseLocation` +
-    /// `.pressedMouseButtons` is a passive state read that works
-    /// regardless of how events are routed.
+    /// Polling instead of NSEvent monitors because once an AppKit drag
+    /// session is live, WindowServer routes mouseDragged events
+    /// directly into the drag subsystem and app-level monitors don't
+    /// see them. `NSEvent.mouseLocation` + `.pressedMouseButtons` are
+    /// passive state reads that work regardless.
     func armDragCloseDetection() {
         dragPollToken &+= 1
         let token = dragPollToken
         let start = NSEvent.mouseLocation
-        pollDragMovement(token: token, start: start, attempt: 0)
+        pollDragStart(token: token, start: start, attempt: 0)
     }
 
-    private func pollDragMovement(token: Int, start: NSPoint, attempt: Int) {
-        // Safety cap: bail after 2 seconds of polling so we never leak
-        // an infinite loop if the mouse state somehow gets stuck.
-        guard attempt < 80 else { return }
+    private func pollDragStart(token: Int, start: NSPoint, attempt: Int) {
+        guard attempt < 80 else { return }  // 2s safety cap
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) { [weak self] in
             guard let self, self.dragPollToken == token else { return }
-            // Button released without substantial motion — it was a
-            // click or a speculative `.onDrag` firing, not a drag.
+            // Released without moving → click / speculative firing.
             guard NSEvent.pressedMouseButtons != 0 else { return }
             let current = NSEvent.mouseLocation
             if hypot(current.x - start.x, current.y - start.y) > 8 {
-                self.panel?.close()
+                self.panel?.alphaValue = 0
+                self.pollDragEnd(token: token, attempt: 0)
                 return
             }
-            // Still pressed, not moved enough yet — keep polling.
-            self.pollDragMovement(token: token, start: start, attempt: attempt + 1)
+            self.pollDragStart(token: token, start: start, attempt: attempt + 1)
+        }
+    }
+
+    private func pollDragEnd(token: Int, attempt: Int) {
+        // 10s cap — a drag shouldn't last this long. If it somehow
+        // does, restore alpha so the user never ends up with an
+        // invisible panel.
+        guard attempt < 400 else {
+            panel?.alphaValue = 1
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) { [weak self] in
+            guard let self, self.dragPollToken == token else { return }
+            if NSEvent.pressedMouseButtons == 0 {
+                // Drag ended (drop or ⎋ cancel) — bring the panel back.
+                self.panel?.alphaValue = 1
+                return
+            }
+            self.pollDragEnd(token: token, attempt: attempt + 1)
         }
     }
 
