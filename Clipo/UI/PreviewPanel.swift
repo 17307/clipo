@@ -34,7 +34,7 @@ final class PreviewPanel: NSPanel {
         host.translatesAutoresizingMaskIntoConstraints = false
         let container = NSView()
         container.wantsLayer = true
-        container.layer?.cornerRadius = 22
+        container.layer?.cornerRadius = DesignTokens.panelRadius
         container.layer?.masksToBounds = true
         container.layer?.borderWidth = 0.5
         container.layer?.borderColor = NSColor.black.withAlphaComponent(0.16).cgColor

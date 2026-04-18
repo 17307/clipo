@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppState.shared.refreshScripts()
         AppState.shared.installDefaultPinboardsIfNeeded()
         IPCServer.shared.start()
+        warmSourceAppIconCache()
 
         // Prompt for Accessibility permission (required for CGEvent paste) on first launch.
         if !Accessibility.isTrusted(prompt: false) {
@@ -319,6 +320,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // taken keyboard focus while open).
             AppState.shared.openToken = UUID()
             panel?.makeKey()
+        }
+    }
+
+    // MARK: - Icon cache warmup
+
+    /// LaunchServices lookups (`NSWorkspace.urlForApplication(withBundleIdentifier:)`)
+    /// are fast once resolved but can stall the main thread 20–100ms on the
+    /// very first call for a given bundle id. Pre-warming the cache off-main
+    /// at launch means the first panel open is icon-populated from frame one.
+    private func warmSourceAppIconCache() {
+        let bundleIDs = Set(AppState.shared.items.compactMap(\.sourceAppBundleID))
+        guard !bundleIDs.isEmpty else { return }
+        Task.detached(priority: .utility) {
+            for id in bundleIDs {
+                _ = AppIconCache.icon(forBundleID: id, size: 20)
+            }
         }
     }
 

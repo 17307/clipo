@@ -9,6 +9,9 @@ enum DesignTokens {
     // MARK: - Layout
     static let panelRadius: CGFloat = 20
     static let cardRadius: CGFloat = 14
+    /// Form controls (search field, text inputs). Halfway between chip/pill
+    /// and card so inputs feel grouped with cards without competing with them.
+    static let inputRadius: CGFloat = 10
     static let cardWidth: CGFloat = 240
     static let cardHeight: CGFloat = 220
     static let cardSpacing: CGFloat = 12

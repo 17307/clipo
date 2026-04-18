@@ -196,10 +196,10 @@ private struct TabChip: View {
         } else {
             Circle()
                 .fill(accent)
-                .frame(width: 7, height: 7)
+                .frame(width: 9, height: 9)
                 .overlay(
                     Circle()
-                        .strokeBorder(accent.opacity(0.35), lineWidth: 0.5)
+                        .strokeBorder(accent.opacity(0.45), lineWidth: 1)
                 )
         }
     }
@@ -260,11 +260,11 @@ private struct SearchFieldView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.inputRadius, style: .continuous)
                 .fill(Color.black.opacity(isActive ? 0.06 : 0.04))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.inputRadius, style: .continuous)
                 .strokeBorder(
                     isActive ? accent.opacity(0.5) : Color.black.opacity(0.08),
                     lineWidth: 1
@@ -321,6 +321,9 @@ private struct FooterHintBar: View {
 
 private struct AccessibilityBanner: View {
     @Environment(AppState.self) private var state
+    @Default(.accentColorHex) private var accentHex
+
+    private var accent: Color { Color(hex: accentHex) ?? DesignTokens.accent }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -370,14 +373,25 @@ private struct AccessibilityBanner: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.inputRadius, style: .continuous)
                 .fill(
+                    // Accent solid with a subtle diagonal highlight overlay
+                    // so the banner feels alive without depending on a
+                    // hard-coded orange palette. Follows the user's theme.
                     LinearGradient(
-                        colors: [Color(hex: "#FF8F3A") ?? .orange, Color(hex: "#FF5E3A") ?? .red],
-                        startPoint: .leading, endPoint: .trailing
+                        colors: [accent, accent.opacity(0.82)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
                     )
                 )
-                .shadow(color: Color.orange.opacity(0.30), radius: 6, x: 0, y: 2)
+                .overlay(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.22), Color.white.opacity(0.0)],
+                        startPoint: .top, endPoint: .center
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: DesignTokens.inputRadius, style: .continuous))
+                    .allowsHitTesting(false)
+                )
+                .shadow(color: accent.opacity(0.30), radius: 6, x: 0, y: 2)
         )
     }
 }

@@ -40,7 +40,7 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         host.translatesAutoresizingMaskIntoConstraints = false
         let container = NSView()
         container.wantsLayer = true
-        container.layer?.cornerRadius = 22
+        container.layer?.cornerRadius = DesignTokens.panelRadius
         container.layer?.masksToBounds = true
         // Only round top corners so the panel hugs the bottom screen edge flush.
         container.layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]

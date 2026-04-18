@@ -79,17 +79,25 @@ private struct AppRow: View {
     let bundleID: String
     let onRemove: () -> Void
 
+    @State private var icon: NSImage?
+    @State private var appName: String = ""
+
     var body: some View {
         HStack(spacing: 8) {
-            if let icon {
-                Image(nsImage: icon).resizable().frame(width: 20, height: 20)
-            } else {
-                Image(systemName: "app.dashed")
-                    .frame(width: 20, height: 20)
-                    .foregroundStyle(.secondary)
+            Group {
+                if let icon {
+                    Image(nsImage: icon).resizable().frame(width: 20, height: 20)
+                } else {
+                    // Neutral placeholder while LaunchServices is queried off
+                    // the main thread. Keeps list open latency flat regardless
+                    // of how many rows are present.
+                    Image(systemName: "app.dashed")
+                        .frame(width: 20, height: 20)
+                        .foregroundStyle(.secondary)
+                }
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text(appName)
+                Text(appName.isEmpty ? bundleID : appName)
                 Text(bundleID)
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
@@ -103,20 +111,25 @@ private struct AppRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.08)))
+        .task(id: bundleID) {
+            await loadIcon(for: bundleID)
+        }
     }
 
-    private var appURL: URL? {
-        NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
-    }
-    private var appName: String {
-        guard let url = appURL else { return bundleID }
-        return FileManager.default.displayName(atPath: url.path)
-    }
-    private var icon: NSImage? {
-        guard let url = appURL else { return nil }
-        let img = NSWorkspace.shared.icon(forFile: url.path)
-        img.size = NSSize(width: 20, height: 20)
-        return img
+    private func loadIcon(for id: String) async {
+        let result: (name: String, icon: NSImage?) = await Task.detached(priority: .utility) {
+            guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) else {
+                return (id, nil)
+            }
+            let name = FileManager.default.displayName(atPath: url.path)
+            // AppIconCache normalises size + caches by bundle id so repeat
+            // opens of this pane are free.
+            let img = AppIconCache.icon(forBundleID: id, size: 20)
+            return (name, img)
+        }.value
+        guard !Task.isCancelled else { return }
+        appName = result.name
+        icon = result.icon
     }
 }
 

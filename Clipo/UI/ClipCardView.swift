@@ -36,8 +36,11 @@ struct ClipCardView: View {
                 .fill(isHovering ? DesignTokens.Surface.cardFillHover : DesignTokens.Surface.cardFill)
         )
         .overlay(
+            // Constant 1pt border — the accent glow (shadow below) does the
+            // work of signalling selection. Jumping to 1.5pt on select adds
+            // a mechanical "pop wider" feel that Paste-style cards avoid.
             RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)
-                .strokeBorder(borderColor, lineWidth: isSelected ? 1.5 : 1)
+                .strokeBorder(borderColor, lineWidth: 1)
         )
         .scaleEffect(scaleFactor)
         .shadow(
@@ -250,7 +253,7 @@ private struct TextBody: View {
         Text(snippet.isEmpty ? " " : snippet)
             .font(DesignTokens.rounded(12, weight: .regular))
             .foregroundStyle(DesignTokens.TextColor.primary)
-            .lineSpacing(2)
+            .lineSpacing(3)
             .lineLimit(8)
             .truncationMode(.tail)
             .multilineTextAlignment(.leading)
@@ -308,7 +311,7 @@ private struct ImageBody: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(8)
+        .padding(12)
     }
 }
 
@@ -319,19 +322,24 @@ private struct ColorBody: View {
         let color = Color(hex: text) ?? .gray
         let useWhiteText = ColorLuminance.isDark(hex: text)
         ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            // Match the card shell's corner radius so the swatch reads as a
+            // full-card surface rather than a floating tile. A soft shadow
+            // tinted with the swatch color gives it the same "floating"
+            // feel the text/image cards get from their own shadows.
+            RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)
                 .fill(color)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)
                         .stroke(Color.black.opacity(0.12), lineWidth: 1)
                 )
+                .shadow(color: color.opacity(0.25), radius: 8, x: 0, y: 2)
             Text(text.uppercased())
                 .font(DesignTokens.mono(13, weight: .bold))
                 .foregroundStyle(useWhiteText ? .white : .black)
                 .tracking(0.8)
                 .shadow(color: (useWhiteText ? Color.black : Color.white).opacity(0.25), radius: 1, x: 0, y: 0)
         }
-        .padding(10)
+        .padding(12)
     }
 }
 
