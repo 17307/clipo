@@ -355,39 +355,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Called by PreviewPanel when it lost key to some other window without
-    /// an explicit close() call. Three cases:
+    /// an explicit close() call.
     ///
-    /// - Focus went BACK to our main panel (user clicked on it, or
-    ///   dismissed the preview via its own Close). Close preview, keep
-    ///   main.
-    /// - Focus went to the previewPanel itself mid-transition. Ignore.
-    /// - Everything else — another of our windows (Settings, Onboarding)
-    ///   OR another app entirely (NSApp.keyWindow == nil in that case,
-    ///   because keyWindow is scoped to our own app). Close both panels
-    ///   so Clipo isn't left hovering while the user's attention has
-    ///   moved on.
+    /// Deferred to the next runloop tick: inside the synchronous
+    /// `resignKey` callback `NSApp.keyWindow` is still the OUTGOING
+    /// window (or momentarily nil) — reading it here would decide
+    /// "focus went nowhere, close everything" for every in-app click.
+    /// Defaulting to "keep main open" is the safe bias: we only
+    /// close main when we can positively identify a genuinely
+    /// external destination.
     func previewLostFocus() {
-        let newKey = NSApp.keyWindow
-        if newKey === panel {
-            previewPanel?.close()
-            return
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let newKey = NSApp.keyWindow
+            if newKey === self.panel {
+                self.previewPanel?.close()
+                return
+            }
+            if newKey === self.previewPanel {
+                // Preview somehow re-became key in the intervening
+                // tick — ignore.
+                return
+            }
+            // nil here really does mean "user is in another app" by
+            // the time we're one runloop tick past resignKey.
+            self.previewPanel?.close()
+            self.panel?.close()
         }
-        if newKey === previewPanel {
-            return
-        }
-        // Either nil (external app) or a different window of ours — in
-        // both situations the main panel should not stay on screen.
-        previewPanel?.close()
-        panel?.close()
     }
 
     private func handlePreviewClosed() {
         previewPanel = nil
         panel?.isShowingPreview = false
         if panel?.isPresented == true {
-            // Re-assert SwiftUI focus on the carousel (the preview may have
-            // taken keyboard focus while open).
-            AppState.shared.openToken = UUID()
+            // Refocus the carousel WITHOUT bumping openToken — the
+            // latter is observed by ClipCarouselView to snap scroll
+            // back to the start, which would yank the user away from
+            // whichever card they were just previewing.
+            AppState.shared.focusResetToken = UUID()
             panel?.makeKey()
         }
     }

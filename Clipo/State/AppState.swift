@@ -103,6 +103,12 @@ final class AppState {
     /// focus and scroll position on each re-entry.
     var openToken = UUID()
 
+    /// Bumped when we need to re-assert keyboard focus on the carousel
+    /// WITHOUT also scrolling back to the start or treating this as a
+    /// fresh panel session. Used after closing a preview so focus
+    /// returns to whichever card the user had selected.
+    var focusResetToken = UUID()
+
     weak var appDelegate: AppDelegate?
 
     private var context: ModelContext { Storage.shared.context }
