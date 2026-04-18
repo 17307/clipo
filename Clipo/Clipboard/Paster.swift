@@ -2,7 +2,8 @@ import AppKit
 import CoreGraphics
 
 /// Simulates ⌘V keystroke to paste the current pasteboard into the frontmost app.
-/// Ported from Maccy's `Clipboard.paste()` (see /Users/ymoon/workspace/project/swift/Maccy/Maccy/Clipboard.swift:111-138).
+/// Ported from Maccy's `Clipboard.paste()` — see `Maccy/Clipboard.swift:111-138`
+/// in https://github.com/p0deje/Maccy.
 enum Paster {
     private static let vKey: CGKeyCode = 0x09 // ANSI-V
 

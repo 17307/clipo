@@ -3,7 +3,8 @@ import Defaults
 import SwiftUI
 
 /// A borderless NSPanel anchored to the bottom edge of the active screen.
-/// Inspired by Maccy's `FloatingPanel` (see /Users/ymoon/workspace/project/swift/Maccy/Maccy/FloatingPanel.swift).
+/// Inspired by Maccy's `FloatingPanel` — see `Maccy/FloatingPanel.swift`
+/// in https://github.com/p0deje/Maccy.
 final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
     private let onClose: () -> Void
     private(set) var isPresented = false

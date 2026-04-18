@@ -3,7 +3,8 @@ import Defaults
 import Foundation
 
 /// Polls `NSPasteboard.general` for changes and produces `ClipItem` snapshots.
-/// Ported from Maccy's `Clipboard` (see /Users/ymoon/workspace/project/swift/Maccy/Maccy/Clipboard.swift).
+/// Ported from Maccy's `Clipboard` — see `Maccy/Clipboard.swift` in
+/// https://github.com/p0deje/Maccy.
 @MainActor
 final class ClipboardEngine {
     static let shared = ClipboardEngine()

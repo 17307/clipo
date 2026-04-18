@@ -1,25 +1,55 @@
-# Build output
+# ---- Build output ----
 build/
 DerivedData/
 
-# Xcode per-user state
+# Release packaging
+build/dmg-staging/
+build/release/
+*.dmg
+
+# ---- Xcode per-user state ----
+# Per-developer workspace state (window frames, breakpoints, debugger state).
+# Must never be committed — it overwrites other developers' Xcode layouts.
 **/xcuserdata/
 **/*.xcuserstate
 **/*.xcuserdatad
 
-# Swift Package Manager caches
+# ---- Swift Package Manager caches ----
 .build/
 .swiftpm/
 Package.pins
 Packages/
 
-# macOS metadata
+# ---- Signing / provisioning (sensitive) ----
+# Never commit certificates, private keys, or team-specific signing config.
+*.p12
+*.p8
+*.cer
+*.mobileprovision
+*.provisionprofile
+ExportOptions.plist
+
+# ---- Local environment overrides ----
+# Shell env files, CI tokens, API keys. Nothing of this shape should
+# ever be in version control.
+.env
+.env.*
+*.secret
+*secrets*
+
+# ---- Tooling caches ----
+.claude/
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- macOS metadata ----
 .DS_Store
+.AppleDouble
+.LSOverride
 
-# Logs
+# ---- Logs ----
 *.log
-
-# Release packaging output
-build/dmg-staging/
-build/release/
-*.dmg
