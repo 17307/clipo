@@ -56,6 +56,27 @@ final class AppState {
     /// this and swaps in a "No text to paste" message.
     var flashStackError: Bool = false
 
+    /// True for ~1.8s after the user tried to drag a card into Finder.
+    /// Finder's drag IPC silently locks up the whole system-wide drag
+    /// subsystem if it receives a drag from an LSUIElement menu-bar
+    /// app — every clipboard manager we've tested hits this, and every
+    /// one of them simply refuses the interaction. FooterHintBar swaps
+    /// in a "Drag to Finder not supported — double-click to paste" row
+    /// while this flag is up.
+    var flashDragFinderBlocked: Bool = false
+
+    /// Fire-and-forget helper that raises `flashDragFinderBlocked`,
+    /// beeps once, and auto-clears after 1.8s. Called from .onDrag
+    /// when we detect Finder as the target app.
+    func notifyFinderDragBlocked() {
+        NSSound.beep()
+        flashDragFinderBlocked = true
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 1_800_000_000)
+            self?.flashDragFinderBlocked = false
+        }
+    }
+
     /// Cached script list. Loaded once at launch (plus on-demand refresh
     /// from the Scripts settings pane) so the right-click menu doesn't hit
     /// disk on every open.

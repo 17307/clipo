@@ -311,7 +311,9 @@ private struct FooterHintBar: View {
         // hide this whole row to avoid repeating the glyphs on every pane
         // landing.
         Group {
-            if state.flashStackError {
+            if state.flashDragFinderBlocked {
+                finderBlockedBody
+            } else if state.flashStackError {
                 errorBody
             } else if state.isMultiSelecting {
                 multiSelectBody
@@ -321,6 +323,7 @@ private struct FooterHintBar: View {
         }
         .accessibilityHidden(true)
         .animation(.easeOut(duration: 0.2), value: state.flashStackError)
+        .animation(.easeOut(duration: 0.2), value: state.flashDragFinderBlocked)
     }
 
     /// Flash shown for ~1.8s when the user hits ⏎ on a multi-selection
@@ -334,6 +337,24 @@ private struct FooterHintBar: View {
                 .font(DesignTokens.rounded(11, weight: .semibold))
                 .foregroundStyle(DesignTokens.TextColor.primary)
             Text("Only text, URLs, and file paths can be stacked. Images and colors paste one at a time.")
+                .font(DesignTokens.rounded(10))
+                .foregroundStyle(DesignTokens.TextColor.secondary)
+                .lineLimit(1)
+            Spacer()
+        }
+    }
+
+    /// Flash shown when the user tried to drag a card while Finder was
+    /// the frontmost app. Explains the double-click paste path.
+    private var finderBlockedBody: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "hand.raised.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.orange)
+            Text("Drag to Finder isn't supported")
+                .font(DesignTokens.rounded(11, weight: .semibold))
+                .foregroundStyle(DesignTokens.TextColor.primary)
+            Text("Double-click a card to paste it into the active Finder window instead.")
                 .font(DesignTokens.rounded(10))
                 .foregroundStyle(DesignTokens.TextColor.secondary)
                 .lineLimit(1)
