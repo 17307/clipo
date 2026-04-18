@@ -56,17 +56,15 @@ struct ClipCarouselView: View {
                                     }
                                     return DragProvider.makeProvider(for: item)
                                 }
-                                // Native SwiftUI click handling. Single +
-                                // double tap coexist with .onDrag because
-                                // drag requires a movement threshold the
-                                // tap gestures ignore.
-                                .onTapGesture(count: 2) {
-                                    if state.isMultiSelecting {
-                                        state.pasteStack()
-                                    } else {
-                                        state.paste(item)
-                                    }
-                                }
+                                // Native SwiftUI tap handling. Only a
+                                // single-tap variant is attached — mixing
+                                // count:1 with count:2 on the same view
+                                // forced SwiftUI to wait ~200ms for a
+                                // possible second click before firing the
+                                // single-tap, which felt laggy when
+                                // scanning between cards. Paste is on
+                                // Return and ⌥1–⌥9, so no user-facing
+                                // functionality is lost.
                                 .simultaneousGesture(
                                     TapGesture().modifiers(.shift).onEnded {
                                         state.extendSelection(to: item.id)
