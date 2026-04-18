@@ -9,37 +9,27 @@ import SwiftUI
 /// Because paste closes the panel, the transient single-click behavior
 /// during a double-click isn't observable by the user.
 ///
-/// `onRightClick` fires just before AppKit propagates the right-click to
-/// the SwiftUI contextMenu below. It exists so carousel code can match
-/// Finder's convention: right-clicking a card that isn't in the current
-/// multi-selection should switch focus to that card before the menu
-/// opens, instead of showing a single-item menu while a stale
-/// multi-selection stays visibly highlighted.
+/// Right-click is NOT intercepted — overriding rightMouseDown and calling
+/// super made SwiftUI's .contextMenu underneath wait a visible beat
+/// before opening. The right-click vs multi-selection UX is instead
+/// handled by the context menu builder itself re-checking membership.
 struct ClickCatcher: NSViewRepresentable {
     let onClick: (Int, NSEvent.ModifierFlags) -> Void
-    var onRightClick: (() -> Void)? = nil
 
     func makeNSView(context: Context) -> NSView {
-        ClickCatcherNSView(onClick: onClick, onRightClick: onRightClick)
+        ClickCatcherNSView(onClick: onClick)
     }
 
     func updateNSView(_ view: NSView, context: Context) {
-        guard let v = view as? ClickCatcherNSView else { return }
-        v.onClick = onClick
-        v.onRightClick = onRightClick
+        (view as? ClickCatcherNSView)?.onClick = onClick
     }
 }
 
 private final class ClickCatcherNSView: NSView {
     var onClick: (Int, NSEvent.ModifierFlags) -> Void
-    var onRightClick: (() -> Void)?
 
-    init(
-        onClick: @escaping (Int, NSEvent.ModifierFlags) -> Void,
-        onRightClick: (() -> Void)?
-    ) {
+    init(onClick: @escaping (Int, NSEvent.ModifierFlags) -> Void) {
         self.onClick = onClick
-        self.onRightClick = onRightClick
         super.init(frame: .zero)
     }
 
@@ -50,12 +40,5 @@ private final class ClickCatcherNSView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         onClick(event.clickCount, event.modifierFlags)
-    }
-
-    override func rightMouseDown(with event: NSEvent) {
-        // Adjust selection state first, then let the event bubble through
-        // to AppKit so the SwiftUI .contextMenu underneath still fires.
-        onRightClick?()
-        super.rightMouseDown(with: event)
     }
 }
