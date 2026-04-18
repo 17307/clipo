@@ -62,14 +62,24 @@ struct ClipCarouselView: View {
                                 // it first (innermost in the modifier
                                 // chain) lets right-click dispatch directly.
                                 .contextMenu { contextMenu(for: item) }
-                                .onDrag {
+                                .onDrag({
                                     // Speculatively invoked on some click
                                     // gestures; must not close the panel
                                     // from here or clicking becomes
                                     // destructive. User closes via Esc
                                     // after the drop instead.
                                     DragProvider.makeProvider(for: item)
-                                }
+                                }, preview: {
+                                    // Lightweight preview — the default
+                                    // .onDrag snapshot drags the full card
+                                    // (shadow + gradient + overlays)
+                                    // through the compositor every frame,
+                                    // which stutters. A small icon-plus-
+                                    // snippet view is cheap to composite
+                                    // and still tells the user what's on
+                                    // the cursor.
+                                    DragPreviewView(item: item)
+                                })
                                 // Single-tap only (no count:2) so SwiftUI
                                 // doesn't add a 200ms double-click
                                 // disambiguation delay. Paste is on Return

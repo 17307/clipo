@@ -55,6 +55,7 @@
 		E9F4A3DF822AB56DBEEC119C /* DefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A6158FDDD74D07FE2555A52 /* DefaultsKeys.swift */; };
 		EA128574AD8FA5C3321609A8 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E79299DBC2419FF23F99DC0 /* Accessibility.swift */; };
 		EAB9DDD02177E4C70B7FD6F6 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = C3FFAC52C22606908E0CB5A5 /* Defaults */; };
+		ED56215F47834584791AC574 /* DragPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A3680000170DB6D79FC88F /* DragPreviewView.swift */; };
 		EE00F95B15FA92F984FE148B /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7721AC49BE856A5D11FFD701 /* Storage.swift */; };
 		F36898A95C1D5901EA2ED66D /* BuiltInScripts.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3A4DEF6FBBD51AD89CC72F /* BuiltInScripts.swift */; };
 		F87038C5A2D3189B65B1E2FF /* BottomPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 057E3232452A09BC045F5C65 /* BottomPanel.swift */; };
@@ -80,6 +81,7 @@
 		52C815B2FA6DC58FEFEEF1E9 /* ClipboardEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardEngine.swift; sourceTree = "<group>"; };
 		58DCFDA0EB87CDC5890F15AA /* Paster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Paster.swift; sourceTree = "<group>"; };
 		5DDA2D46ED645424465E3FDD /* ClipCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipCardView.swift; sourceTree = "<group>"; };
+		66A3680000170DB6D79FC88F /* DragPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragPreviewView.swift; sourceTree = "<group>"; };
 		675353C5353849600A97AA65 /* ScriptsFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsFolder.swift; sourceTree = "<group>"; };
 		6C1761C747BD2A13565B0466 /* ClipContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipContent.swift; sourceTree = "<group>"; };
 		6D8A2D4ACBA271C7DF1787E5 /* ScriptDocsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDocsView.swift; sourceTree = "<group>"; };
@@ -231,6 +233,7 @@
 				99EF01521B361812E23517E9 /* ClipCarouselView.swift */,
 				2FB451705D1C7D5489CEA3DE /* ClipPreviewView.swift */,
 				72979EF484E426D26E0A7637 /* DesignTokens.swift */,
+				66A3680000170DB6D79FC88F /* DragPreviewView.swift */,
 				06A6575BCCDBF751410BB171 /* DragProvider.swift */,
 				CEEA783AA7610EBA7501317F /* OnboardingWindow.swift */,
 				3B3FA36E879E8EAA67F515DF /* PreviewPanel.swift */,
@@ -448,6 +451,7 @@
 				CB89AC6C6CB068C23133227F /* ClipoScript.swift in Sources */,
 				E9F4A3DF822AB56DBEEC119C /* DefaultsKeys.swift in Sources */,
 				E16C06E0C7945DDF8A6B5C96 /* DesignTokens.swift in Sources */,
+				ED56215F47834584791AC574 /* DragPreviewView.swift in Sources */,
 				CE4C0E3CCF84D75C7939AEA1 /* DragProvider.swift in Sources */,
 				6E3D1DA0C43E7A6E8F4D1410 /* GeneralPane.swift in Sources */,
 				3F741C224F7437F435AFEC6C /* GlobalHotkeys.swift in Sources */,
