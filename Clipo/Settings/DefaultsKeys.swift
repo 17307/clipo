@@ -87,7 +87,18 @@ extension Defaults.Keys {
             "net.antelle.keeweb",
         ]
     )
-    static let ignoredApps = Key<[String]>("ignoredApps", default: [])
+    /// Source apps whose copies are never archived. Pre-populated with
+    /// Apple's first-party password tooling — bundle-ID-based filtering is
+    /// more reliable here than hoping they advertise `.concealed` for every
+    /// copy path (e.g. "Copy Username" vs "Copy Password" may not both be
+    /// flagged). Users can add/remove apps in Settings → Ignore → Apps.
+    static let ignoredApps = Key<[String]>(
+        "ignoredApps",
+        default: [
+            "com.apple.Passwords",       // macOS 15+ Passwords.app
+            "com.apple.keychainaccess",  // Legacy Keychain Access
+        ]
+    )
     static let ignoreAllAppsExceptListed = Key<Bool>("ignoreAllAppsExceptListed", default: false)
     static let ignoreRegexp = Key<[String]>("ignoreRegexp", default: [])
     static let ignoreEvents = Key<Bool>("ignoreEvents", default: false)
