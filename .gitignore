@@ -18,3 +18,8 @@ Packages/
 
 # Logs
 *.log
+
+# Release packaging output
+build/dmg-staging/
+build/release/
+*.dmg
