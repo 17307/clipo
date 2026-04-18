@@ -252,13 +252,16 @@ private struct EmptyCard: View {
         .frame(width: DesignTokens.cardWidth, height: DesignTokens.cardHeight)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)
-                .fill(Color.white.opacity(0.5))
+                .fill(Color(
+                    light: .white.opacity(0.5),
+                    dark: Color(white: 0.15).opacity(0.55)
+                ))
         )
         .overlay(
-            // Dashed border needs to read at a glance — 0.10 felt like a ghost.
+            // Dashed border needs to read at a glance in both appearances.
             RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)
                 .strokeBorder(
-                    Color.black.opacity(0.18),
+                    Color.primary.opacity(0.22),
                     style: StrokeStyle(lineWidth: 1, dash: [5, 4])
                 )
         )

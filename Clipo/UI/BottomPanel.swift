@@ -33,8 +33,9 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         titleVisibility = .hidden
         titlebarAppearsTransparent = true
 
-        // Host SwiftUI content.
-        appearance = NSAppearance(named: .vibrantLight)
+        // Inherit the system appearance so light ↔ dark mode works without
+        // a restart. (Previously hard-coded to vibrantLight.)
+        appearance = nil
 
         let host = NSHostingView(rootView: view())
         host.translatesAutoresizingMaskIntoConstraints = false
@@ -45,7 +46,7 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         // Only round top corners so the panel hugs the bottom screen edge flush.
         container.layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         container.layer?.borderWidth = 0.5
-        container.layer?.borderColor = NSColor.black.withAlphaComponent(0.08).cgColor
+        container.layer?.borderColor = NSColor.separatorColor.cgColor
         container.addSubview(host)
         NSLayoutConstraint.activate([
             host.leadingAnchor.constraint(equalTo: container.leadingAnchor),

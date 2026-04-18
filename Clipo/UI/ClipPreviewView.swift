@@ -18,7 +18,9 @@ struct ClipPreviewView: View {
         ZStack {
             VisualEffectView(material: .popover, blendingMode: .behindWindow)
                 .ignoresSafeArea()
-            Color.white.opacity(0.40).ignoresSafeArea().allowsHitTesting(false)
+            DesignTokens.Surface.panelWash
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
 
             VStack(spacing: 0) {
                 header
@@ -29,7 +31,6 @@ struct ClipPreviewView: View {
                 footer
             }
         }
-        .preferredColorScheme(.light)
         .onAppear {
             cachedSourceApp = Self.lookupSourceApp(item: item)
         }
@@ -160,7 +161,7 @@ struct ClipPreviewView: View {
                 .textSelection(.enabled)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.04)))
+                .background(RoundedRectangle(cornerRadius: DesignTokens.inputRadius).fill(Color.primary.opacity(0.06)))
 
             HStack {
                 Button {
@@ -202,7 +203,7 @@ struct ClipPreviewView: View {
                 .frame(width: 220, height: 220)
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.black.opacity(0.15), lineWidth: 1)
+                        .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
                 )
                 .shadow(color: color.opacity(0.35), radius: 20, x: 0, y: 8)
 
@@ -265,7 +266,7 @@ struct ClipPreviewView: View {
                         .buttonStyle(.borderless)
                     }
                     .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.04)))
+                    .background(RoundedRectangle(cornerRadius: DesignTokens.inputRadius).fill(Color.primary.opacity(0.06)))
                 }
             }
             .padding(18)
@@ -300,7 +301,7 @@ struct ClipPreviewView: View {
                 .font(DesignTokens.rounded(9, weight: .bold))
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
-                .background(RoundedRectangle(cornerRadius: 4).fill(Color.black.opacity(0.08)))
+                .background(RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.09)))
             Text(text)
                 .font(DesignTokens.rounded(10))
         }

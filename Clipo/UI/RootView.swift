@@ -16,7 +16,7 @@ struct RootView: View {
         ZStack {
             VisualEffectView(material: .popover, blendingMode: .behindWindow)
                 .ignoresSafeArea()
-            Color.white.opacity(0.35)
+            DesignTokens.Surface.panelWash
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
@@ -42,7 +42,6 @@ struct RootView: View {
                 }
             }
         }
-        .preferredColorScheme(.light)
         .onAppear {
             // Default focus → the card carousel. Arrow keys navigate directly;
             // any printable key typed there is routed to the search field.
@@ -174,7 +173,7 @@ private struct TabChip: View {
                         Capsule().fill(accent.opacity(0.14))
                         Capsule().strokeBorder(accent.opacity(0.55), lineWidth: 1)
                     } else if hovering {
-                        Capsule().fill(Color.black.opacity(0.05))
+                        Capsule().fill(Color.primary.opacity(0.06))
                     }
                 }
             )
@@ -262,12 +261,12 @@ private struct SearchFieldView: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.inputRadius, style: .continuous)
-                .fill(Color.black.opacity(isActive ? 0.06 : 0.04))
+                .fill(Color.primary.opacity(isActive ? 0.07 : 0.05))
         )
         .overlay(
             RoundedRectangle(cornerRadius: DesignTokens.inputRadius, style: .continuous)
                 .strokeBorder(
-                    isActive ? accent.opacity(0.5) : Color.black.opacity(0.08),
+                    isActive ? accent.opacity(0.55) : Color.primary.opacity(0.10),
                     lineWidth: 1
                 )
         )
@@ -318,7 +317,7 @@ private struct FooterHintBar: View {
                 .padding(.vertical, 2)
                 .background(
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(Color.black.opacity(0.06))
+                        .fill(Color.primary.opacity(0.08))
                 )
                 Text(label)
             }

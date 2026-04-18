@@ -44,7 +44,13 @@ struct ClipCardView: View {
         )
         .scaleEffect(scaleFactor)
         .shadow(
-            color: isSelected ? accent.opacity(0.30) : .black.opacity(0.10),
+            // Unselected: a subtle drop so cards lift from the chrome.
+            // Dark mode swaps to a brighter fill-based halo since a dark
+            // shadow on a dark surface would disappear.
+            color: isSelected ? accent.opacity(0.30) : Color(
+                light: .black.opacity(0.10),
+                dark: .black.opacity(0.45)
+            ),
             radius: isSelected ? 14 : 5,
             x: 0, y: isSelected ? 6 : 2
         )
@@ -198,7 +204,7 @@ private struct IndexBadge: View {
                     .font(DesignTokens.rounded(9, weight: .bold))
                     .foregroundStyle(DesignTokens.TextColor.secondary)
                     .frame(width: 15, height: 15)
-                    .background(Circle().fill(Color.black.opacity(0.08)))
+                    .background(Circle().fill(Color.primary.opacity(0.09)))
             }
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: state.isOptionDown)
@@ -226,7 +232,7 @@ private struct CardFooter: View {
                     .foregroundStyle(DesignTokens.TextColor.secondary)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 2)
-                    .background(Capsule().fill(Color.black.opacity(0.05)))
+                    .background(Capsule().fill(Color.primary.opacity(0.06)))
             }
             if item.numberOfCopies > 1 {
                 HStack(spacing: 2) {
@@ -355,7 +361,7 @@ private struct ColorBody: View {
                 .fill(color)
                 .overlay(
                     RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous)
-                        .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                        .stroke(Color.primary.opacity(0.14), lineWidth: 1)
                 )
                 .shadow(color: color.opacity(0.25), radius: 8, x: 0, y: 2)
             Text(text.uppercased())
@@ -454,9 +460,19 @@ private struct FileBody: View {
     }
 }
 
-// MARK: - Color(hex:) bridge
+// MARK: - Color(hex:) + theme bridges
 
 extension Color {
+    /// Returns a Color that picks a different variant depending on whether
+    /// the host appearance is light or dark. Used throughout DesignTokens
+    /// so card fills, borders, and overlays adapt without per-view logic.
+    init(light: Color, dark: Color) {
+        self = Color(NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            return NSColor(isDark ? dark : light)
+        })
+    }
+
     init?(hex: String) {
         var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if s.hasPrefix("#") { s.removeFirst() }

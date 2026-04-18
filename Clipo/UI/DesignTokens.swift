@@ -32,29 +32,49 @@ enum DesignTokens {
         .system(size: size, weight: weight, design: .rounded)
     }
 
-    // MARK: - Text colors (for light translucent bg)
+    // MARK: - Text colors
+    //
+    // `Color.primary` is black in light mode and white in dark mode, so
+    // overlaying it at a given opacity gives the same perceived contrast
+    // against either background without branching.
     struct TextColor {
-        static let primary   = Color.black.opacity(0.88)
-        static let secondary = Color.black.opacity(0.62)
-        static let tertiary  = Color.black.opacity(0.40)
-        static let faint     = Color.black.opacity(0.22)
+        static let primary   = Color.primary.opacity(0.88)
+        static let secondary = Color.primary.opacity(0.62)
+        static let tertiary  = Color.primary.opacity(0.40)
+        static let faint     = Color.primary.opacity(0.22)
     }
 
-    // MARK: - Surfaces (light translucent)
+    // MARK: - Surfaces
+    //
+    // Card fills use explicit light/dark stops so the translucent glass look
+    // survives both appearances. Borders/chips/dividers lean on primary so
+    // they auto-invert.
     struct Surface {
         static let cardFill = LinearGradient(
-            colors: [Color.white.opacity(0.88), Color.white.opacity(0.72)],
+            colors: [
+                Color(light: .white.opacity(0.88), dark: Color(white: 0.18).opacity(0.85)),
+                Color(light: .white.opacity(0.72), dark: Color(white: 0.12).opacity(0.80))
+            ],
             startPoint: .top, endPoint: .bottom
         )
         static let cardFillHover = LinearGradient(
-            colors: [Color.white.opacity(0.95), Color.white.opacity(0.82)],
+            colors: [
+                Color(light: .white.opacity(0.95), dark: Color(white: 0.22).opacity(0.90)),
+                Color(light: .white.opacity(0.82), dark: Color(white: 0.16).opacity(0.85))
+            ],
             startPoint: .top, endPoint: .bottom
         )
-        static let cardBorder         = Color.black.opacity(0.07)
-        static let cardBorderHover    = Color.black.opacity(0.12)
+        static let cardBorder         = Color.primary.opacity(0.07)
+        static let cardBorderHover    = Color.primary.opacity(0.16)
         static let cardBorderSelected = DesignTokens.accent
-        static let chipFill           = Color.black.opacity(0.05)
-        static let chipBorder         = Color.black.opacity(0.08)
-        static let divider            = Color.black.opacity(0.06)
+        static let chipFill           = Color.primary.opacity(0.06)
+        static let chipBorder         = Color.primary.opacity(0.10)
+        static let divider            = Color.primary.opacity(0.08)
+        /// Full-panel wash tint that sits on top of the popover material.
+        /// Lightens the chrome in light mode; darkens slightly in dark mode.
+        static let panelWash = Color(
+            light: Color.white.opacity(0.35),
+            dark: Color(white: 0.10).opacity(0.30)
+        )
     }
 }

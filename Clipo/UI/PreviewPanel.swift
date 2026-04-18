@@ -28,7 +28,8 @@ final class PreviewPanel: NSPanel {
         isMovableByWindowBackground = false
         hidesOnDeactivate = false
         animationBehavior = .none
-        appearance = NSAppearance(named: .vibrantLight)
+        // Inherit the system appearance (light/dark auto-switch).
+        appearance = nil
 
         let host = NSHostingView(rootView: view())
         host.translatesAutoresizingMaskIntoConstraints = false
@@ -37,7 +38,7 @@ final class PreviewPanel: NSPanel {
         container.layer?.cornerRadius = DesignTokens.panelRadius
         container.layer?.masksToBounds = true
         container.layer?.borderWidth = 0.5
-        container.layer?.borderColor = NSColor.black.withAlphaComponent(0.16).cgColor
+        container.layer?.borderColor = NSColor.separatorColor.cgColor
         container.addSubview(host)
         NSLayoutConstraint.activate([
             host.leadingAnchor.constraint(equalTo: container.leadingAnchor),
