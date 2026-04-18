@@ -63,21 +63,31 @@ struct ClipCarouselView: View {
                                 // chain) lets right-click dispatch directly.
                                 .contextMenu { contextMenu(for: item) }
                                 .onDrag({
-                                    // Speculatively invoked on some click
-                                    // gestures; must not close the panel
-                                    // from here or clicking becomes
-                                    // destructive. User closes via Esc
-                                    // after the drop instead.
-                                    DragProvider.makeProvider(for: item)
+                                    // SwiftUI can invoke this closure
+                                    // speculatively on click-like
+                                    // gestures, so we don't close the
+                                    // panel immediately (that was the
+                                    // click-clobber bug). Instead we
+                                    // schedule a delayed close and only
+                                    // fire it if the mouse button is
+                                    // STILL held 120ms later — real
+                                    // drags hold the button the whole
+                                    // time; misfired clicks release
+                                    // within a few tens of ms.
+                                    //
+                                    // Hiding the panel during a real
+                                    // drag is what turns mid-drag
+                                    // stutter into smooth tracking: the
+                                    // full-width translucent window is
+                                    // the most expensive item the
+                                    // WindowServer compositor has to
+                                    // process each frame.
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                                        guard NSEvent.pressedMouseButtons != 0 else { return }
+                                        state.appDelegate?.closePanel()
+                                    }
+                                    return DragProvider.makeProvider(for: item)
                                 }, preview: {
-                                    // Lightweight preview — the default
-                                    // .onDrag snapshot drags the full card
-                                    // (shadow + gradient + overlays)
-                                    // through the compositor every frame,
-                                    // which stutters. A small icon-plus-
-                                    // snippet view is cheap to composite
-                                    // and still tells the user what's on
-                                    // the cursor.
                                     DragPreviewView(item: item)
                                 })
                                 // Single-tap only (no count:2) so SwiftUI
