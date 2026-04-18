@@ -178,18 +178,24 @@ struct ClipPreviewView: View {
     }
 
     private var imageContent: some View {
-        Group {
-            if let img = item.image {
-                ScrollView([.horizontal, .vertical]) {
-                    Image(nsImage: img)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(minWidth: 200, minHeight: 200)
-                        .padding(18)
+        VStack(spacing: 0) {
+            Group {
+                if let img = item.image {
+                    ScrollView([.horizontal, .vertical]) {
+                        Image(nsImage: img)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(minWidth: 200, minHeight: 200)
+                            .padding(18)
+                    }
+                } else {
+                    Text("Image could not be decoded.")
+                        .foregroundStyle(.secondary)
                 }
-            } else {
-                Text("Image could not be decoded.")
-                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if let ocr = item.ocrText, !ocr.isEmpty {
+                OCRTextSection(text: ocr, accent: accent)
             }
         }
     }
@@ -343,5 +349,76 @@ struct ClipPreviewView: View {
         if s.hasPrefix("#") { s.removeFirst() }
         guard s.count == 6, let v = UInt64(s, radix: 16) else { return nil }
         return (Int((v >> 16) & 0xFF), Int((v >> 8) & 0xFF), Int(v & 0xFF))
+    }
+}
+
+// MARK: - OCR text section (appears below image preview)
+
+/// Surfaces Vision's OCR output beneath the image so users can see what
+/// makes the image searchable — and copy the recognised text out if they
+/// just want the words, not the bitmap. Collapsed by default to stay out
+/// of the way.
+private struct OCRTextSection: View {
+    let text: String
+    let accent: Color
+
+    @State private var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Divider().opacity(0.4)
+            Button {
+                expanded.toggle()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "text.viewfinder")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(accent)
+                    Text("Recognised text")
+                        .font(DesignTokens.rounded(11, weight: .semibold))
+                        .foregroundStyle(DesignTokens.TextColor.primary)
+                    Text("\(text.count) chars")
+                        .font(DesignTokens.rounded(10))
+                        .foregroundStyle(DesignTokens.TextColor.tertiary)
+                    Spacer()
+                    Button {
+                        copyToClipboard()
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                            .font(DesignTokens.rounded(10, weight: .medium))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(DesignTokens.TextColor.secondary)
+                    .pointingHand()
+                    Image(systemName: expanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(DesignTokens.TextColor.tertiary)
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+            .pointingHand()
+
+            if expanded {
+                ScrollView {
+                    Text(text)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(DesignTokens.TextColor.primary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 14)
+                }
+                .frame(maxHeight: 160)
+            }
+        }
+        .background(Color.primary.opacity(0.03))
+    }
+
+    private func copyToClipboard() {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(text, forType: .string)
     }
 }

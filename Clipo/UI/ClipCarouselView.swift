@@ -38,7 +38,8 @@ struct ClipCarouselView: View {
                                     item: item,
                                     index: index + 1,
                                     isSelected: state.selectedID == item.id,
-                                    multiPosition: state.selectionIndex(of: item.id)
+                                    multiPosition: state.selectionIndex(of: item.id),
+                                    searchQuery: state.searchQuery
                                 )
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))

@@ -26,6 +26,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         warmSourceAppIconCache()
         setupScreenChangeObserver()
 
+        // Pop the welcome window on first launch. Deferred a beat so the
+        // Accessibility trust prompt (if any) doesn't race with it.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            OnboardingWindowController.showIfNeeded()
+        }
+
         // Prompt for Accessibility permission (required for CGEvent paste) on first launch.
         if !Accessibility.isTrusted(prompt: false) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
@@ -116,6 +122,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
 
+        let welcome = menu.addItem(withTitle: "Show Welcome…", action: #selector(showWelcome), keyEquivalent: "")
+        welcome.target = self
+
+        menu.addItem(.separator())
+
         let quit = menu.addItem(withTitle: "Quit Clipo", action: #selector(quitApp), keyEquivalent: "q")
         quit.keyEquivalentModifierMask = [.command]
         quit.target = self
@@ -128,6 +139,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func clearHistory() {
         AppState.shared.clearAll()
+    }
+
+    @objc private func showWelcome() {
+        OnboardingWindowController.show()
     }
 
     @objc private func quitApp() {

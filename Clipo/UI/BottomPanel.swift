@@ -54,7 +54,58 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
             host.topAnchor.constraint(equalTo: container.topAnchor),
             host.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
+
+        // Thin drag strip at the very top edge — lets the user grow or
+        // shrink the panel by dragging. Sits on top of the SwiftUI content
+        // so the cursor flips to resize when hovered.
+        let resizeHandle = ResizeHandleView { [weak self] delta in
+            self?.applyHeightDelta(delta)
+        } onRelease: { [weak self] in
+            self?.persistHeight()
+        }
+        resizeHandle.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(resizeHandle)
+        NSLayoutConstraint.activate([
+            resizeHandle.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            resizeHandle.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            resizeHandle.topAnchor.constraint(equalTo: container.topAnchor),
+            resizeHandle.heightAnchor.constraint(equalToConstant: 6),
+        ])
+
         contentView = container
+    }
+
+    // MARK: - Height drag
+
+    /// In-flight drag delta accumulates here so we don't round-trip through
+    /// Defaults (and SwiftData notifications) on every frame.
+    private var dragHeight: CGFloat?
+
+    fileprivate func applyHeightDelta(_ delta: CGFloat) {
+        guard isPresented, let screen = screen else { return }
+        // Dragging UP (delta > 0 from mouseDragged locationInWindow change)
+        // should grow the panel since our origin is anchored to the bottom
+        // of the screen.
+        let current = dragHeight ?? frame.height
+        let proposed = (current - delta)
+            .clamped(to: panelMinHeight...panelMaxHeight)
+        dragHeight = proposed
+        let visibleFrame = screen.visibleFrame
+        let bottomInset = Defaults[.panelBottomInset]
+        let newFrame = NSRect(
+            x: visibleFrame.minX,
+            y: visibleFrame.minY + bottomInset,
+            width: visibleFrame.width,
+            height: proposed
+        )
+        setFrame(newFrame, display: true)
+    }
+
+    fileprivate func persistHeight() {
+        if let h = dragHeight {
+            Defaults[.panelHeight] = Double(h)
+        }
+        dragHeight = nil
     }
 
     func toggle() {
@@ -232,5 +283,60 @@ private extension NSScreen {
     static func forMouse() -> NSScreen? {
         let mouse = NSEvent.mouseLocation
         return NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) }) ?? .main
+    }
+}
+
+/// Min/max panel heights. Below 280 the footer+search+one row of cards
+/// stops fitting; above 640 it eats most of the screen. Top-level because
+/// generic types can't have static stored properties.
+private let panelMinHeight: CGFloat = 280
+private let panelMaxHeight: CGFloat = 640
+
+private extension CGFloat {
+    func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+        Swift.min(range.upperBound, Swift.max(range.lowerBound, self))
+    }
+}
+
+/// Transparent 6 pt strip across the top of the panel. Flips the cursor
+/// to resize-up-down when hovered and reports vertical drag deltas to the
+/// containing panel so it can grow / shrink the frame live.
+private final class ResizeHandleView: NSView {
+    let onDrag: (CGFloat) -> Void
+    let onRelease: () -> Void
+    private var lastDragY: CGFloat?
+
+    init(onDrag: @escaping (CGFloat) -> Void,
+         onRelease: @escaping () -> Void) {
+        self.onDrag = onDrag
+        self.onRelease = onRelease
+        super.init(frame: .zero)
+        wantsLayer = true
+        // Debug-tint the handle if ever needed:
+        // layer?.backgroundColor = NSColor.red.withAlphaComponent(0.3).cgColor
+    }
+
+    required init?(coder: NSCoder) { fatalError("not implemented") }
+
+    override func resetCursorRects() {
+        // Entire handle shows the resize cursor.
+        addCursorRect(bounds, cursor: .resizeUpDown)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        lastDragY = event.locationInWindow.y
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let last = lastDragY else { return }
+        let y = event.locationInWindow.y
+        let delta = y - last
+        lastDragY = y
+        onDrag(delta)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        lastDragY = nil
+        onRelease()
     }
 }

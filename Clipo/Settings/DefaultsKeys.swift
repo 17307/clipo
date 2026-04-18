@@ -91,4 +91,7 @@ extension Defaults.Keys {
 
     // One-time seeding — true after the default "Important" pinboard has been created.
     static let didInstallDefaultPinboards = Key<Bool>("didInstallDefaultPinboards", default: false)
+    /// Set true after the welcome window has been dismissed so first-launch
+    /// onboarding runs exactly once per install.
+    static let didShowOnboarding = Key<Bool>("didShowOnboarding", default: false)
 }
