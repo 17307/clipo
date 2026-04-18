@@ -61,6 +61,35 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         isPresented ? close() : open()
     }
 
+    /// Force SwiftUI to resolve its initial layout at launch instead of
+    /// during the first hotkey press. Without this the very first ⇧⌘V
+    /// visibly stalls ~40-80ms before the slide animation kicks in, while
+    /// the NSHostingView measures the carousel, cards, and tabs for the
+    /// first time. Done via an alpha=0 order-in far off-screen — nothing
+    /// ever reaches the user's eyes.
+    func prewarm() {
+        let targetScreen = NSScreen.forMouse() ?? NSScreen.main ?? NSScreen.screens.first
+        guard let targetScreen else { return }
+        let size = NSSize(
+            width: targetScreen.visibleFrame.width,
+            height: Defaults[.panelHeight]
+        )
+        let offscreen = NSRect(
+            x: targetScreen.visibleFrame.minX,
+            y: targetScreen.visibleFrame.minY - size.height - 200,
+            width: size.width,
+            height: size.height
+        )
+        let savedAlpha = alphaValue
+        alphaValue = 0
+        setFrame(offscreen, display: false)
+        orderBack(nil)
+        contentView?.layoutSubtreeIfNeeded()
+        contentView?.displayIfNeeded()
+        orderOut(nil)
+        alphaValue = savedAlpha
+    }
+
     /// Called by AppDelegate when screens are added/removed/reconfigured
     /// (e.g. the user unplugs the external display the panel was anchored
     /// to). Re-anchors the panel to the screen where the mouse currently

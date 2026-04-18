@@ -199,6 +199,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     .environment(AppState.shared)
             )
         }
+        // Resolve the SwiftUI layout once at launch — without this the very
+        // first hotkey press stalls visibly while the NSHostingView measures
+        // its tree for the first time. Deferred one runloop tick so the
+        // rest of applicationDidFinishLaunching finishes first.
+        DispatchQueue.main.async { [weak self] in
+            self?.panel?.prewarm()
+        }
     }
 
     func togglePanel() {
