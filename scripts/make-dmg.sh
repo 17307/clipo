@@ -32,8 +32,12 @@ rm -rf "$STAGING"
 mkdir -p "$STAGING"
 
 cp -R "$APP_PATH" "$STAGING/Clipo.app"
-cp "$CLI_PATH" "$STAGING/clipocli"
 ln -s /Applications "$STAGING/Applications"
+
+# clipocli lives inside Clipo.app/Contents/Resources/clipocli (build-release.sh
+# embedded it). No need to ship it separately — users enable it via
+# Settings → Advanced → "Add clipocli to $PATH" which writes an export
+# line into ~/.zshrc pointing at the bundled binary.
 
 cat > "$STAGING/README.txt" <<'README'
 Clipo — macOS Clipboard Manager
@@ -46,18 +50,24 @@ INSTALL
   3. Grant Accessibility permission when prompted so Clipo can paste
      into other apps.
 
-CLI (optional)
-  The `clipocli` binary lets you talk to the running Clipo app from
-  scripts:
-      sudo cp clipocli /usr/local/bin/
+COMMAND-LINE TOOL
+  Clipo ships a companion CLI (`clipocli`) inside the app bundle. To
+  expose it on your shell PATH:
+
+      Open Clipo → Settings → Advanced → Command-Line Tool → "Add to PATH"
+
+  After that, in a NEW terminal:
+
       clipocli health
       clipocli read
       echo "hi" | clipocli write -
 
+  Remove it again with the "Remove from PATH" button; Clipo only edits
+  the block bracketed by its own markers, so your other PATH entries
+  are left alone.
+
 DEFAULT SHORTCUT
   ⇧⌘V toggles the Clipo panel. Change it in Settings → General.
-
-More: https://github.com/ymoon/clipo  (update as needed)
 README
 
 echo "→ removing old $DMG_PATH"

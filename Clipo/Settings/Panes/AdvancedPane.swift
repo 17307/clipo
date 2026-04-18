@@ -10,6 +10,11 @@ struct AdvancedPane: View {
     @State private var accessibilityGranted: Bool = Accessibility.isTrusted(prompt: false)
     @State private var showResetConfirm = false
 
+    @State private var cliInstalled: Bool = CLIPathInstaller.isInstalled()
+    @State private var cliOutdated: Bool = CLIPathInstaller.isOutdated()
+    @State private var cliError: String?
+    @State private var cliJustChanged = false
+
     var body: some View {
         Form {
             Section("Monitoring") {
@@ -39,6 +44,49 @@ struct AdvancedPane: View {
                 Text("Required to synthesize ⌘V and paste into other apps.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            Section("Command-Line Tool") {
+                HStack(spacing: 8) {
+                    Image(systemName: cliStatusIcon)
+                        .foregroundStyle(cliStatusTint)
+                    Text(cliStatusText)
+                    Spacer()
+                    if cliInstalled {
+                        if cliOutdated {
+                            Button("Reinstall") { runCLI { try CLIPathInstaller.install() } }
+                        }
+                        Button("Remove from PATH") { runCLI { try CLIPathInstaller.uninstall() } }
+                    } else {
+                        Button("Add to PATH") { runCLI { try CLIPathInstaller.install() } }
+                    }
+                }
+                HStack {
+                    Text("Binary:").foregroundStyle(.secondary)
+                    Text(CLIPathInstaller.cliBinaryPath)
+                        .font(.system(size: 11, design: .monospaced))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    Button("Reveal") {
+                        NSWorkspace.shared.activateFileViewerSelecting(
+                            [URL(fileURLWithPath: CLIPathInstaller.cliBinaryPath)]
+                        )
+                    }
+                }
+                if let cliError {
+                    Text(cliError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                } else if cliJustChanged {
+                    Text("Done. Open a new terminal window for the PATH change to take effect.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Adds a managed block to ~/.zshrc exporting the bundled clipocli on your shell PATH. Only the block between Clipo's own markers is touched on removal.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Diagnostics") {
@@ -89,6 +137,34 @@ struct AdvancedPane: View {
     private var logsURL: URL {
         (try? FileManager.default.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: false))?
             .appending(path: "Logs/Clipo") ?? URL(fileURLWithPath: "/tmp")
+    }
+
+    private var cliStatusIcon: String {
+        if !cliInstalled { return "circle" }
+        return cliOutdated ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
+    }
+
+    private var cliStatusTint: Color {
+        if !cliInstalled { return .secondary }
+        return cliOutdated ? .orange : .green
+    }
+
+    private var cliStatusText: String {
+        if !cliInstalled { return "Not on PATH" }
+        return cliOutdated ? "Installed — points at an old location" : "Installed"
+    }
+
+    private func runCLI(_ action: () throws -> Void) {
+        cliError = nil
+        cliJustChanged = false
+        do {
+            try action()
+            cliInstalled = CLIPathInstaller.isInstalled()
+            cliOutdated = CLIPathInstaller.isOutdated()
+            cliJustChanged = true
+        } catch {
+            cliError = error.localizedDescription
+        }
     }
 
     private func resetAll() {

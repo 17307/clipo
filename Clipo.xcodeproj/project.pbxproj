@@ -33,6 +33,7 @@
 		AE7A39F36877CC0F943433BB /* ClipoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2114447BE9B1F190A234951 /* ClipoApp.swift */; };
 		B000BBD39BD98520AC84BFA5 /* Pinboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F232EA8632112A9CCCD420 /* Pinboard.swift */; };
 		B65F8429E750F4CCB7D65C5C /* ScriptsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40B55EC6AD7740713CD7FA8 /* ScriptsPane.swift */; };
+		B9512083C6981D540EFD7E6C /* CLIPathInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = C423E12D93A8B6C8692ABE53 /* CLIPathInstaller.swift */; };
 		BB94F9261741F1978DD83D42 /* ScriptEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C651EDED105BE6388FC3F38E /* ScriptEngine.swift */; };
 		C73859DDE4D9958B79B2456B /* ClipCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99EF01521B361812E23517E9 /* ClipCarouselView.swift */; };
 		CB89AC6C6CB068C23133227F /* ClipoScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EBE7C6AC7AB6B0333458B2 /* ClipoScript.swift */; };
@@ -97,6 +98,7 @@
 		AA07A0B1A3DEAC7138C3B0D7 /* ClickCatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickCatcher.swift; sourceTree = "<group>"; };
 		B0EBE7C6AC7AB6B0333458B2 /* ClipoScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipoScript.swift; sourceTree = "<group>"; };
 		B3E40A3040FD70CDFEA4162C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		C423E12D93A8B6C8692ABE53 /* CLIPathInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLIPathInstaller.swift; sourceTree = "<group>"; };
 		C58827E8DECED641A1207EFF /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		C651EDED105BE6388FC3F38E /* ScriptEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptEngine.swift; sourceTree = "<group>"; };
 		C6A362156D3985406CAD92DD /* Clipo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Clipo.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -185,6 +187,7 @@
 		436CF4C6631C662DE6FD27C8 /* IPC */ = {
 			isa = PBXGroup;
 			children = (
+				C423E12D93A8B6C8692ABE53 /* CLIPathInstaller.swift */,
 				41417CCD2FCA406229EF21D7 /* IPCServer.swift */,
 			);
 			path = IPC;
@@ -420,6 +423,7 @@
 				AC29F75B30B999F905400535 /* AppearancePane.swift in Sources */,
 				F87038C5A2D3189B65B1E2FF /* BottomPanel.swift in Sources */,
 				F36898A95C1D5901EA2ED66D /* BuiltInScripts.swift in Sources */,
+				B9512083C6981D540EFD7E6C /* CLIPathInstaller.swift in Sources */,
 				5A324279153217B5A0230F23 /* ClickCatcher.swift in Sources */,
 				CCF7E83D2E11F471EA87BA06 /* ClipCardView.swift in Sources */,
 				C73859DDE4D9958B79B2456B /* ClipCarouselView.swift in Sources */,
