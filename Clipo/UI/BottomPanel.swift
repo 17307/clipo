@@ -183,10 +183,16 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
             height: height
         )
 
-        // Start below the screen and slide up.
+        // Start just below the final resting position — sliding the full
+        // panel height from off-screen is compositionally expensive for
+        // a 1800 pt wide translucent window with shadow. A shorter travel
+        // (height * 0.7 ≈ just past the bottom edge of the final frame)
+        // feels nearly identical visually but cuts per-frame redraw time
+        // significantly so the slide reads as genuinely smooth.
+        let travel = height * 0.7
         let startFrame = NSRect(
             x: finalFrame.minX,
-            y: visibleFrame.minY - height,
+            y: finalFrame.minY - travel,
             width: width,
             height: height
         )
@@ -195,8 +201,14 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         makeKey()
 
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.28
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            // Snappier than .easeOut — 0.22s with a custom curve that
+            // starts fast and decelerates smoothly (similar to Apple's
+            // "spring" timing in Messages / Notification Center).
+            ctx.duration = 0.22
+            ctx.timingFunction = CAMediaTimingFunction(
+                controlPoints: 0.22, 1, 0.36, 1
+            )
+            ctx.allowsImplicitAnimation = true
             animator().setFrame(finalFrame, display: true)
         }
         isPresented = true
