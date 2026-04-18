@@ -26,10 +26,11 @@ concurrency:
 jobs:
   build:
     name: Build & Package (arm64)
-    # macos-14 and macos-latest are Apple Silicon runners on GitHub's
-    # hosted pool. Pin to macos-14 so a future macos-latest bump can't
-    # silently change the toolchain under us.
-    runs-on: macos-14
+    # Apple Silicon runner with a Swift 6.1 toolchain. `macos-14` tops
+    # out at Xcode 16.2 (Swift 6.0) which can't resolve
+    # KeyboardShortcuts ≥2.4.0 — that package declares Swift tools
+    # version 6.1. `macos-15` ships Xcode 16.3+ which bundles Swift 6.1.
+    runs-on: macos-15
     timeout-minutes: 30
 
     steps:
@@ -46,11 +47,15 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Select latest Xcode 16.x
-        # xcodegen's generated project.pbxproj uses Xcode 16's
-        # objectVersion (77), which Xcode 15 can't read ("future Xcode
-        # project file format"). Pick the highest Xcode 16.x available
-        # on the runner instead of hardcoding a specific point release.
+      - name: Select latest Xcode 16.x (needs ≥16.3 for Swift 6.1)
+        # Two constraints:
+        #   1. xcodegen emits project.pbxproj objectVersion 77 → Xcode 16.x
+        #      (Xcode 15 bails with "future Xcode project file format").
+        #   2. KeyboardShortcuts ≥2.4.0 declares swift-tools-version:6.1
+        #      → Xcode 16.3+ (16.2 bundles only Swift 6.0 and SPM refuses
+        #      to resolve).
+        # Glob all /Applications/Xcode_16*.app and pick the highest via
+        # sort -V so GitHub runner-image bumps don't force edits here.
         run: |
           XCODE=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
           if [ -z "$XCODE" ]; then
