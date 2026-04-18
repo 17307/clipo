@@ -29,6 +29,7 @@
 		A01E6EDF4101C5C4CE880A39 /* ClipItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DFF28B4DB3BB62BE4AE39D7 /* ClipItem.swift */; };
 		AA18774407A1EDD62BFE02E6 /* ScriptsFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675353C5353849600A97AA65 /* ScriptsFolder.swift */; };
 		AC29F75B30B999F905400535 /* AppearancePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9FB56A54B21C1D5448D719D /* AppearancePane.swift */; };
+		AD86221D1162E16EAC24AB61 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 79121A780AC2C2046908B2BF /* AppIcon.icns */; };
 		AE7A39F36877CC0F943433BB /* ClipoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2114447BE9B1F190A234951 /* ClipoApp.swift */; };
 		B000BBD39BD98520AC84BFA5 /* Pinboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F232EA8632112A9CCCD420 /* Pinboard.swift */; };
 		B65F8429E750F4CCB7D65C5C /* ScriptsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40B55EC6AD7740713CD7FA8 /* ScriptsPane.swift */; };
@@ -78,6 +79,7 @@
 		6F30EBDAABB1132C526F61D7 /* clipocli */ = {isa = PBXFileReference; includeInIndex = 0; path = clipocli; sourceTree = BUILT_PRODUCTS_DIR; };
 		72979EF484E426D26E0A7637 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		7721AC49BE856A5D11FFD701 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
+		79121A780AC2C2046908B2BF /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		7DBAC5D5F6A9DCF981BB828D /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		7DF6DF078F7F6C216E06B3AC /* AppIconCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconCache.swift; sourceTree = "<group>"; };
 		7F5DFD89E8996C8057C0F8C7 /* ScriptLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLoader.swift; sourceTree = "<group>"; };
@@ -191,6 +193,7 @@
 		44220E33D6632A2485871511 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				79121A780AC2C2046908B2BF /* AppIcon.icns */,
 				8EC88D21543F50E84CBF0027 /* Assets.xcassets */,
 			);
 			path = Resources;
@@ -397,6 +400,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AD86221D1162E16EAC24AB61 /* AppIcon.icns in Resources */,
 				E3CF6B64A23909C06AB61280 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
