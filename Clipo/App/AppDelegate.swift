@@ -206,28 +206,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if panel.isPresented {
             panel.close()
         } else {
-            // Clear the search first — applyFilter() is cheap (no DB hit) and
-            // uses the allItems snapshot that the engine keeps fresh on every
-            // copy. We explicitly do NOT call reload() here: the defensive
-            // re-fetch runs async below, during the slide-in animation, so
-            // the hotkey-to-visible latency stays flat even with 10k items.
-            AppState.shared.searchQuery = ""
-            AppState.shared.applyFilter()
-            // Always start focused on the first card, regardless of what was
-            // selected when the panel last closed.
-            AppState.shared.selectedID = AppState.shared.items.first?.id
-            AppState.shared.openToken = UUID()
-            AppState.shared.recheckAccessibility()
-            // Re-sync Option-down state — the flagsChanged monitor only fires
-            // while our window is key, so a user who released Option while
-            // the panel was closed would otherwise come back to stale badges.
-            AppState.shared.isOptionDown = NSEvent.modifierFlags.contains(.option)
+            // Batch all state mutations inside one transaction so SwiftUI
+            // observes them as a single atomic change and doesn't try to
+            // interpolate between intermediate values while the panel is
+            // mid-slide. applyFilter() already suppresses its own inner
+            // animations; we extend that suppression to the surrounding
+            // selection/openToken/accessibility writes.
+            var t = Transaction()
+            t.disablesAnimations = true
+            withTransaction(t) {
+                AppState.shared.searchQuery = ""
+                AppState.shared.recheckAccessibility()
+                AppState.shared.isOptionDown = NSEvent.modifierFlags.contains(.option)
+                // applyFilter repoints selectedID to items.first if the
+                // previous selection fell out of the visible set, so no
+                // redundant selectedID write needed here.
+                AppState.shared.applyFilter()
+                AppState.shared.openToken = UUID()
+            }
             panel.open()
-            // Defensive reload: catches the rare case where something outside
-            // AppState touched the store (not currently possible, but kept
-            // so future writers don't have to remember to refresh). Hops
-            // through the runloop so the panel frame lands before the fetch.
-            Task { @MainActor in AppState.shared.reload() }
+            // NB: no defensive reload() here. The engine already keeps
+            // allItems fresh via add(), and every mutation path
+            // (delete/clearAll/move/pinboard CRUD) calls reload() itself —
+            // a Task { reload() } here would just re-publish items into
+            // the middle of the slide animation and cause a ForEach churn.
         }
     }
 
