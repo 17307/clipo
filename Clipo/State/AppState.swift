@@ -141,8 +141,15 @@ final class AppState {
         let maxPixels = Defaults[.ocrMaxPixels]
         Task.detached(priority: .utility) {
             guard let text = await OCRService.extractText(from: data, maxPixels: maxPixels) else {
+                NSLog("[Clipo OCR] no text extracted for %@", id.uuidString)
                 return
             }
+            // Surface a short preview in the system log so users debugging
+            // a "search misses the image" can verify whether it's an
+            // extraction problem or a query-matching problem. `Console.app`
+            // filtered by process=Clipo shows these.
+            let preview = text.prefix(80).replacingOccurrences(of: "\n", with: " ¶ ")
+            NSLog("[Clipo OCR] %@ chars=%d: %@", id.uuidString, text.count, String(preview))
             await MainActor.run {
                 // The item may have been deleted or evicted by
                 // enforceHistoryLimit() while Vision was working. Either way
