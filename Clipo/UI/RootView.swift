@@ -224,7 +224,7 @@ private struct SearchFieldView: View {
                 .font(DesignTokens.rounded(12, weight: .regular))
                 .foregroundStyle(DesignTokens.TextColor.primary)
                 .focused($focus, equals: .search)
-                .onChange(of: state.searchQuery) { _, _ in state.refresh() }
+                .onChange(of: state.searchQuery) { _, _ in state.applyFilter() }
                 .onSubmit { state.pasteSelected() }
                 .onKeyPress(.downArrow) {
                     focus = .carousel
@@ -245,7 +245,7 @@ private struct SearchFieldView: View {
             if !state.searchQuery.isEmpty {
                 Button {
                     state.searchQuery = ""
-                    state.refresh()
+                    state.applyFilter()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 11))

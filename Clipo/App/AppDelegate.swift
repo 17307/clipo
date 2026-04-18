@@ -184,8 +184,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if panel.isPresented {
             panel.close()
         } else {
+            // Clear the search first — applyFilter() is cheap (no DB hit) and
+            // uses the allItems snapshot that the engine keeps fresh on every
+            // copy. We explicitly do NOT call reload() here: the defensive
+            // re-fetch runs async below, during the slide-in animation, so
+            // the hotkey-to-visible latency stays flat even with 10k items.
             AppState.shared.searchQuery = ""
-            AppState.shared.refresh()
+            AppState.shared.applyFilter()
             // Always start focused on the first card, regardless of what was
             // selected when the panel last closed.
             AppState.shared.selectedID = AppState.shared.items.first?.id
@@ -196,6 +201,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // the panel was closed would otherwise come back to stale badges.
             AppState.shared.isOptionDown = NSEvent.modifierFlags.contains(.option)
             panel.open()
+            // Defensive reload: catches the rare case where something outside
+            // AppState touched the store (not currently possible, but kept
+            // so future writers don't have to remember to refresh). Hops
+            // through the runloop so the panel frame lands before the fetch.
+            Task { @MainActor in AppState.shared.reload() }
         }
     }
 

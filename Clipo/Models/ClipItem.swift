@@ -2,12 +2,12 @@ import AppKit
 import Foundation
 import SwiftData
 
-enum ClipKind {
-    case text
-    case image
-    case file
-    case url
-    case color
+enum ClipKind: Int {
+    case text = 0
+    case image = 1
+    case file = 2
+    case url = 3
+    case color = 4
 }
 
 @Model
@@ -104,6 +104,14 @@ final class ClipItem {
         c.countLimit = 500
         return c
     }()
+    /// Kind is otherwise O(N × image-decode) when filtering by Images/Files —
+    /// `image != nil` used to call `NSImage(data:)` just to answer a boolean.
+    /// Cache the answer so filtering and card rendering are O(1).
+    private static let kindCache: NSCache<NSUUID, NSNumber> = {
+        let c = NSCache<NSUUID, NSNumber>()
+        c.countLimit = 4000
+        return c
+    }()
 
     var image: NSImage? {
         let key = id as NSUUID
@@ -119,11 +127,28 @@ final class ClipItem {
     }
 
     var primaryKind: ClipKind {
-        if !fileURLs.isEmpty { return .file }
-        if image != nil { return .image }
-        if let t = text, t.looksLikeURL { return .url }
-        if let t = text, t.looksLikeColor { return .color }
-        return .text
+        let key = id as NSUUID
+        if let cached = Self.kindCache.object(forKey: key),
+           let k = ClipKind(rawValue: cached.intValue) {
+            return k
+        }
+        let result: ClipKind
+        if !fileURLs.isEmpty {
+            result = .file
+        } else if imageData != nil {
+            // Check presence only — do NOT decode the bytes into an NSImage
+            // just to answer "is this an image?". Decode happens lazily in
+            // the `image` accessor when a card actually renders.
+            result = .image
+        } else if let t = text, t.looksLikeURL {
+            result = .url
+        } else if let t = text, t.looksLikeColor {
+            result = .color
+        } else {
+            result = .text
+        }
+        Self.kindCache.setObject(NSNumber(value: result.rawValue), forKey: key)
+        return result
     }
 
     var previewableText: String {

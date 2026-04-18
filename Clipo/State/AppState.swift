@@ -51,7 +51,9 @@ final class AppState {
 
     func setFilter(_ filter: ClipFilter) {
         activeFilter = filter
-        refresh()
+        // Filter tab swap doesn't need a DB round-trip — applyFilter()
+        // re-derives the visible items from the already-cached allItems.
+        applyFilter()
     }
 
     func selectFilterByIndex(_ index: Int) {
@@ -68,8 +70,14 @@ final class AppState {
 
     private var context: ModelContext { Storage.shared.context }
 
+    /// Unfiltered, already-sorted snapshot of the entire history. We fetch
+    /// once per "hard" event (new copy, delete, clear, pinboard move, defaults
+    /// change) and then derive `items` from this via applyFilter(). Search
+    /// keystrokes and filter-tab swaps re-derive without a DB round-trip.
+    private var allItems: [ClipItem] = []
+
     init() {
-        refresh()
+        reload()
     }
 
     // MARK: - History operations
@@ -86,20 +94,20 @@ final class AppState {
             existing.lastCopiedAt = .now
             existing.numberOfCopies += 1
             try? context.save()
-            refresh()
+            reload()
             return
         }
 
         context.insert(item)
         try? context.save()
         enforceHistoryLimit()
-        refresh()
+        reload()
     }
 
     func delete(_ item: ClipItem) {
         context.delete(item)
         try? context.save()
-        refresh()
+        reload()
     }
 
     func clearAll() {
@@ -109,10 +117,13 @@ final class AppState {
             $0.pinShortcut == nil && $0.pinboard == nil
         })
         try? context.save()
-        refresh()
+        reload()
     }
 
-    func refresh() {
+    /// Full reload from SwiftData. Use for "hard" events (new copy, delete,
+    /// clear, pinboard move, sort order change). For search and filter-tab
+    /// swaps call `applyFilter()` directly — no DB hit.
+    func reload() {
         let descriptor: FetchDescriptor<ClipItem>
         switch Defaults[.sortBy] {
         case .lastCopiedAt:
@@ -125,24 +136,32 @@ final class AppState {
                 SortDescriptor(\.lastCopiedAt, order: .reverse)
             ])
         }
-        let all = (try? context.fetch(descriptor)) ?? []
+        allItems = (try? context.fetch(descriptor)) ?? []
+        applyFilter()
+        refreshPinboards()
+    }
 
-        // Filter by the active top-bar filter. Items pinned to a Pinboard
-        // still show in History — the Pinboard is an extra categorization,
-        // not a move.
+    /// Kept as an alias so existing callsites (and Defaults observers) can
+    /// trigger a full reload with one verb. New code should call `reload()`
+    /// or `applyFilter()` explicitly.
+    func refresh() { reload() }
+
+    /// Re-derive the visible `items` from the already-fetched `allItems`.
+    /// Runs on every keystroke during search and every filter tab swap.
+    /// Must stay O(N) in memory — no SwiftData round-trips.
+    func applyFilter() {
         let filtered: [ClipItem]
         switch activeFilter {
         case .history:
-            filtered = all
+            filtered = allItems
         case .images:
-            filtered = all.filter { $0.primaryKind == .image }
+            filtered = allItems.filter { $0.primaryKind == .image }
         case .files:
-            filtered = all.filter { $0.primaryKind == .file }
+            filtered = allItems.filter { $0.primaryKind == .file }
         case .pinboard(let id):
-            filtered = all.filter { $0.pinboard?.id == id }
+            filtered = allItems.filter { $0.pinboard?.id == id }
         }
 
-        // Apply search
         let nextItems: [ClipItem]
         if searchQuery.isEmpty {
             nextItems = filtered
@@ -151,7 +170,6 @@ final class AppState {
             nextItems = filtered.filter { $0.title.lowercased().contains(q) }
         }
 
-        // Compute the next selectedID without mutating yet.
         let nextSelected: UUID?
         if let id = selectedID, nextItems.contains(where: { $0.id == id }) {
             nextSelected = id
@@ -171,8 +189,6 @@ final class AppState {
                 selectedID = nextSelected
             }
         }
-
-        refreshPinboards()
     }
 
     private func refreshPinboards() {
@@ -261,11 +277,21 @@ final class AppState {
 
     /// Promote an item to "most recent" status so it moves to the front of
     /// the carousel after being used. Runs before every internal copy/paste.
+    ///
+    /// Keeps paste latency flat: instead of re-fetching from SwiftData (which
+    /// shows up as a visible re-sort flash when the panel closes), we just
+    /// move the item to the head of `allItems` in memory and re-derive the
+    /// visible list. The new `lastCopiedAt` is persisted, so the next
+    /// full `reload()` produces the same ordering.
     private func bumpRecency(_ item: ClipItem) {
         item.lastCopiedAt = .now
         item.numberOfCopies += 1
         try? context.save()
-        refresh()
+        if let idx = allItems.firstIndex(where: { $0.id == item.id }) {
+            allItems.remove(at: idx)
+        }
+        allItems.insert(item, at: 0)
+        applyFilter()
     }
 
     // MARK: - Pinboard operations
@@ -307,7 +333,9 @@ final class AppState {
     func move(_ item: ClipItem, to board: Pinboard?) {
         item.pinboard = board
         try? context.save()
-        refresh()
+        // Membership drives both the Pinboard filter and the card footer
+        // chip — re-derive the visible list, but no DB round-trip needed.
+        applyFilter()
     }
 
     // MARK: - Navigation

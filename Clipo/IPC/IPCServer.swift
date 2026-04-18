@@ -126,9 +126,9 @@ final class IPCServer: @unchecked Sendable {
     // MARK: - Per-connection handling
 
     private func handleClient(fd: Int32) {
-        defer { close(fd) }
         guard let payload = readFrame(fd: fd) else {
             writeError(fd: fd, code: "bad_frame", message: "could not read request frame")
+            close(fd)
             return
         }
 
@@ -136,27 +136,36 @@ final class IPCServer: @unchecked Sendable {
         do {
             guard let obj = try JSONSerialization.jsonObject(with: payload) as? [String: Any] else {
                 writeError(fd: fd, code: "bad_json", message: "request is not a JSON object")
+                close(fd)
                 return
             }
             request = obj
         } catch {
             writeError(fd: fd, code: "bad_json", message: "\(error)")
+            close(fd)
             return
         }
 
         guard let cmd = request["cmd"] as? String else {
             writeError(fd: fd, code: "missing_cmd", message: "`cmd` field is required")
+            close(fd)
             return
         }
         let args = request["args"] as? [String: Any] ?? [:]
 
-        // Dispatch onto the main actor — SwiftData context + AppState are
-        // main-isolated.
-        let response: [String: Any] = DispatchQueue.main.sync {
-            IPCServer.dispatch(cmd: cmd, args: args, startedAt: self.startedAt)
+        // Hop onto main to query SwiftData + AppState (main-isolated), then
+        // hand the response back to our worker queue for writing. We never
+        // do `main.sync` here: if the main thread is busy rendering the
+        // carousel or running a paste, a `sync` would stall a worker thread
+        // for that entire duration.
+        let startedAt = self.startedAt
+        DispatchQueue.main.async { [weak self] in
+            let response = IPCServer.dispatch(cmd: cmd, args: args, startedAt: startedAt)
+            self?.clientQueue.async {
+                self?.writeResponse(fd: fd, response: response)
+                close(fd)
+            }
         }
-
-        writeResponse(fd: fd, response: response)
     }
 
     // MARK: - Command dispatch
