@@ -275,6 +275,74 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel?.close()
     }
 
+    // MARK: - Drag detection
+
+    /// Monitors installed by `armDragCloseDetection`. Only one instance is
+    /// ever live — installing a new one tears down the previous set.
+    private var dragMoveMonitor: Any?
+    private var dragUpMonitor: Any?
+    private var dragGlobalMoveMonitor: Any?
+    private var dragGlobalUpMonitor: Any?
+    private var dragStartLocation: NSPoint?
+
+    /// Called from a card's `.onDrag` closure. Sets up NSEvent monitors
+    /// that close the panel as soon as the cursor moves far enough to
+    /// confirm a real drag (vs SwiftUI's speculative `.onDrag` firings
+    /// on click-like gestures — those release before movement). Closing
+    /// the panel frees the compositor to track the drag preview
+    /// smoothly; full-width translucent NSPanels are the most expensive
+    /// item per frame.
+    func armDragCloseDetection() {
+        tearDownDragDetection()
+        dragStartLocation = NSEvent.mouseLocation
+
+        let moveHandler: (NSEvent) -> Void = { [weak self] event in
+            guard let self,
+                  let start = self.dragStartLocation else { return }
+            let current = NSEvent.mouseLocation
+            let dx = current.x - start.x
+            let dy = current.y - start.y
+            // 8 pt movement reliably separates real drag motion from
+            // the tiny hand jitter during a click. SwiftUI's own drag
+            // threshold is in the same ballpark.
+            if hypot(dx, dy) > 8 {
+                self.tearDownDragDetection()
+                self.panel?.close()
+            }
+        }
+        let upHandler: (NSEvent) -> Void = { [weak self] _ in
+            // Click without real movement — just a speculative .onDrag
+            // firing. Cancel monitors without touching the panel.
+            self?.tearDownDragDetection()
+        }
+
+        dragMoveMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDragged]) { event in
+            moveHandler(event)
+            return event
+        }
+        dragUpMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp]) { event in
+            upHandler(event)
+            return event
+        }
+        // Global monitors catch events once the cursor leaves our
+        // window (which happens during an actual drag); without these
+        // we'd stop getting the motion signal the instant the user
+        // crossed the panel edge.
+        dragGlobalMoveMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged], handler: moveHandler)
+        dragGlobalUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp], handler: upHandler)
+    }
+
+    private func tearDownDragDetection() {
+        for monitor in [dragMoveMonitor, dragUpMonitor, dragGlobalMoveMonitor, dragGlobalUpMonitor] {
+            if let monitor { NSEvent.removeMonitor(monitor) }
+        }
+        dragMoveMonitor = nil
+        dragUpMonitor = nil
+        dragGlobalMoveMonitor = nil
+        dragGlobalUpMonitor = nil
+        dragStartLocation = nil
+    }
+
     /// Exposed for IPC consumers (e.g. `clipocli health`).
     var panelIsPresented: Bool { panel?.isPresented == true }
 

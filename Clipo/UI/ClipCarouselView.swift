@@ -63,29 +63,16 @@ struct ClipCarouselView: View {
                                 // chain) lets right-click dispatch directly.
                                 .contextMenu { contextMenu(for: item) }
                                 .onDrag({
-                                    // SwiftUI can invoke this closure
-                                    // speculatively on click-like
-                                    // gestures, so we don't close the
-                                    // panel immediately (that was the
-                                    // click-clobber bug). Instead we
-                                    // schedule a delayed close and only
-                                    // fire it if the mouse button is
-                                    // STILL held 120ms later — real
-                                    // drags hold the button the whole
-                                    // time; misfired clicks release
-                                    // within a few tens of ms.
-                                    //
-                                    // Hiding the panel during a real
-                                    // drag is what turns mid-drag
-                                    // stutter into smooth tracking: the
-                                    // full-width translucent window is
-                                    // the most expensive item the
-                                    // WindowServer compositor has to
-                                    // process each frame.
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                                        guard NSEvent.pressedMouseButtons != 0 else { return }
-                                        state.appDelegate?.closePanel()
-                                    }
+                                    // Arm an NSEvent-driven drag
+                                    // detector. It closes the panel the
+                                    // instant the cursor has moved >8pt
+                                    // (real drag motion) while mouseUp
+                                    // cancels it silently — much snappier
+                                    // than the previous 120ms timer and
+                                    // still safe against SwiftUI's
+                                    // speculative .onDrag firings on
+                                    // click-like gestures.
+                                    state.appDelegate?.armDragCloseDetection()
                                     return DragProvider.makeProvider(for: item)
                                 }, preview: {
                                     DragPreviewView(item: item)
