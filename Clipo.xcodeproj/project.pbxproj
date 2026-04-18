@@ -41,6 +41,7 @@
 		CB89AC6C6CB068C23133227F /* ClipoScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EBE7C6AC7AB6B0333458B2 /* ClipoScript.swift */; };
 		CCF7E83D2E11F471EA87BA06 /* ClipCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DDA2D46ED645424465E3FDD /* ClipCardView.swift */; };
 		CD69E7C4D0AF4F5C27D1B2B2 /* ClipFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95CC7080C0E87D0C080848F1 /* ClipFilter.swift */; };
+		CE4C0E3CCF84D75C7939AEA1 /* DragProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A6575BCCDBF751410BB171 /* DragProvider.swift */; };
 		D1D4C5DE96E1447CF683C711 /* String+Shortened.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9651FD0BBD95728AFBF07BA3 /* String+Shortened.swift */; };
 		D3845CD64270AEEB2B8463D6 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5B746C2241AEA7708F9489 /* SettingsWindowController.swift */; };
 		D7E1B9DF14557812A33780DD /* Paster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58DCFDA0EB87CDC5890F15AA /* Paster.swift */; };
@@ -63,6 +64,7 @@
 
 /* Begin PBXFileReference section */
 		057E3232452A09BC045F5C65 /* BottomPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomPanel.swift; sourceTree = "<group>"; };
+		06A6575BCCDBF751410BB171 /* DragProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragProvider.swift; sourceTree = "<group>"; };
 		2A68AF17CF0141155B5142EA /* SearchHighlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchHighlight.swift; sourceTree = "<group>"; };
 		2FB451705D1C7D5489CEA3DE /* ClipPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipPreviewView.swift; sourceTree = "<group>"; };
 		3A6158FDDD74D07FE2555A52 /* DefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultsKeys.swift; sourceTree = "<group>"; };
@@ -229,6 +231,7 @@
 				99EF01521B361812E23517E9 /* ClipCarouselView.swift */,
 				2FB451705D1C7D5489CEA3DE /* ClipPreviewView.swift */,
 				72979EF484E426D26E0A7637 /* DesignTokens.swift */,
+				06A6575BCCDBF751410BB171 /* DragProvider.swift */,
 				CEEA783AA7610EBA7501317F /* OnboardingWindow.swift */,
 				3B3FA36E879E8EAA67F515DF /* PreviewPanel.swift */,
 				7DBAC5D5F6A9DCF981BB828D /* RootView.swift */,
@@ -445,6 +448,7 @@
 				CB89AC6C6CB068C23133227F /* ClipoScript.swift in Sources */,
 				E9F4A3DF822AB56DBEEC119C /* DefaultsKeys.swift in Sources */,
 				E16C06E0C7945DDF8A6B5C96 /* DesignTokens.swift in Sources */,
+				CE4C0E3CCF84D75C7939AEA1 /* DragProvider.swift in Sources */,
 				6E3D1DA0C43E7A6E8F4D1410 /* GeneralPane.swift in Sources */,
 				3F741C224F7437F435AFEC6C /* GlobalHotkeys.swift in Sources */,
 				2A04BCA9A10FD5661A0BFECE /* IPCServer.swift in Sources */,

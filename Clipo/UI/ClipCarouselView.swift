@@ -43,11 +43,45 @@ struct ClipCarouselView: View {
                                 )
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))
-                                .overlay(
-                                    ClickCatcher { clickCount, mods in
-                                        handleClick(on: item, clickCount: clickCount, mods: mods)
+                                // SwiftUI .onDrag — the only drag path that
+                                // Finder reliably accepts. Custom AppKit
+                                // beginDraggingSession triggered
+                                // kDragIPCWithinWindow reentrancy errors.
+                                .onDrag {
+                                    DispatchQueue.main.async {
+                                        state.appDelegate?.closePanel()
+                                    }
+                                    return DragProvider.makeProvider(for: item)
+                                }
+                                // Native SwiftUI click handling. Single +
+                                // double tap coexist with .onDrag because
+                                // drag requires a movement threshold the
+                                // tap gestures ignore.
+                                .onTapGesture(count: 2) {
+                                    if state.isMultiSelecting {
+                                        state.pasteStack()
+                                    } else {
+                                        state.paste(item)
+                                    }
+                                }
+                                .simultaneousGesture(
+                                    TapGesture().modifiers(.shift).onEnded {
+                                        state.extendSelection(to: item.id)
+                                        focus = .carousel
                                     }
                                 )
+                                .simultaneousGesture(
+                                    TapGesture().modifiers(.command).onEnded {
+                                        state.toggleInSelection(item.id)
+                                        focus = .carousel
+                                    }
+                                )
+                                .onTapGesture {
+                                    state.clearMultiSelection()
+                                    state.selectedID = item.id
+                                    focus = .carousel
+                                    state.appDelegate?.closePreview()
+                                }
                                 .contextMenu { contextMenu(for: item) }
                             }
                         }
@@ -262,38 +296,6 @@ struct ClipCarouselView: View {
         let next = idx + direction
         guard next >= 0, next < state.items.count else { return }
         state.extendSelection(to: state.items[next].id)
-    }
-
-    /// Dispatches a carousel card click into the correct selection /
-    /// paste path based on modifiers:
-    /// - double click: paste (single item or stack if multi-selecting)
-    /// - ⇧ + click: extend selection from the current anchor
-    /// - ⌘ + click: toggle this card in/out of the multi-selection
-    /// - plain click: clear any multi-selection and single-focus this card
-    private func handleClick(on item: ClipItem, clickCount: Int, mods: NSEvent.ModifierFlags) {
-        if clickCount >= 2 {
-            if state.isMultiSelecting {
-                state.pasteStack()
-            } else {
-                state.paste(item)
-            }
-            return
-        }
-        if mods.contains(.shift) {
-            state.extendSelection(to: item.id)
-            focus = .carousel
-            return
-        }
-        if mods.contains(.command) {
-            state.toggleInSelection(item.id)
-            focus = .carousel
-            return
-        }
-        // Plain click — collapse back to single-select on this card.
-        state.clearMultiSelection()
-        state.selectedID = item.id
-        focus = .carousel
-        state.appDelegate?.closePreview()
     }
 
     /// Suffix a menu item's title with the current binding's glyph so the
