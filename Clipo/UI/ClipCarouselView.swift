@@ -43,30 +43,28 @@ struct ClipCarouselView: View {
                                 )
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))
-                                // SwiftUI .onDrag. We intentionally do NOT
-                                // close the panel here — SwiftUI sometimes
-                                // invokes the closure speculatively on
-                                // click-like gestures (especially for
-                                // image/file cards where the user's
-                                // instinct is to "grab"), and closing the
-                                // panel from inside meant a regular click
-                                // could make Clipo disappear. The user can
-                                // close via Esc after the drop if they
-                                // want; every other drop target receives
-                                // the drag correctly while the panel
-                                // stays visible.
+                                // IMPORTANT: .contextMenu must come BEFORE
+                                // .onDrag / .onTapGesture. SwiftUI on macOS
+                                // makes right-click wait for left-button
+                                // gestures to resolve when the context menu
+                                // is attached outside them — with the drag
+                                // gesture in play that meant ~300ms of
+                                // stall before the menu appeared. Putting
+                                // it first (innermost in the modifier
+                                // chain) lets right-click dispatch directly.
+                                .contextMenu { contextMenu(for: item) }
                                 .onDrag {
+                                    // Speculatively invoked on some click
+                                    // gestures; must not close the panel
+                                    // from here or clicking becomes
+                                    // destructive. User closes via Esc
+                                    // after the drop instead.
                                     DragProvider.makeProvider(for: item)
                                 }
-                                // Native SwiftUI tap handling. Only a
-                                // single-tap variant is attached — mixing
-                                // count:1 with count:2 on the same view
-                                // forced SwiftUI to wait ~200ms for a
-                                // possible second click before firing the
-                                // single-tap, which felt laggy when
-                                // scanning between cards. Paste is on
-                                // Return and ⌥1–⌥9, so no user-facing
-                                // functionality is lost.
+                                // Single-tap only (no count:2) so SwiftUI
+                                // doesn't add a 200ms double-click
+                                // disambiguation delay. Paste is on Return
+                                // and ⌥1–⌥9.
                                 .simultaneousGesture(
                                     TapGesture().modifiers(.shift).onEnded {
                                         state.extendSelection(to: item.id)
@@ -85,7 +83,6 @@ struct ClipCarouselView: View {
                                     focus = .carousel
                                     state.appDelegate?.closePreview()
                                 }
-                                .contextMenu { contextMenu(for: item) }
                             }
                         }
                     }
