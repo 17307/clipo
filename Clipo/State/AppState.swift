@@ -513,6 +513,32 @@ final class AppState {
         Defaults[.didInstallDefaultPinboards] = true
     }
 
+    /// Empty a Pinboard without destroying the board itself. Every item
+    /// that belonged to it is moved back to History (pinboard = nil).
+    func clearPinboard(_ board: Pinboard) {
+        for item in allItems where item.pinboard?.id == board.id {
+            item.pinboard = nil
+        }
+        try? context.save()
+        applyFilter()
+    }
+
+    /// Delete a Pinboard; its items survive (pinboard just becomes nil).
+    /// The board itself is removed from the top-bar filter list.
+    func deletePinboard(_ board: Pinboard) {
+        for item in allItems where item.pinboard?.id == board.id {
+            item.pinboard = nil
+        }
+        context.delete(board)
+        try? context.save()
+        // If this board was the active filter, fall back to History.
+        if case let .pinboard(id) = activeFilter, id == board.id {
+            activeFilter = .history
+        }
+        refreshPinboards()
+        applyFilter()
+    }
+
     func move(_ item: ClipItem, to board: Pinboard?) {
         item.pinboard = board
         try? context.save()

@@ -22,4 +22,14 @@ enum SharedFormatters {
     }()
 
     static let byteCount = ByteCountFormatter()
+
+    /// Absolute timestamp for hover tooltips — "Mar 24, 2026 at 2:15 PM"
+    /// reads far better than "2m ago" when the user wants to know when
+    /// exactly they copied something.
+    static let absoluteTime: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .short
+        return f
+    }()
 }

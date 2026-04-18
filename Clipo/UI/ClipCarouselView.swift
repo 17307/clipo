@@ -44,9 +44,14 @@ struct ClipCarouselView: View {
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))
                                 .overlay(
-                                    ClickCatcher { clickCount, mods in
-                                        handleClick(on: item, clickCount: clickCount, mods: mods)
-                                    }
+                                    ClickCatcher(
+                                        onClick: { clickCount, mods in
+                                            handleClick(on: item, clickCount: clickCount, mods: mods)
+                                        },
+                                        onRightClick: {
+                                            handleRightClick(on: item)
+                                        }
+                                    )
                                 )
                                 .contextMenu { contextMenu(for: item) }
                             }
@@ -262,6 +267,19 @@ struct ClipCarouselView: View {
         let next = idx + direction
         guard next >= 0, next < state.items.count else { return }
         state.extendSelection(to: state.items[next].id)
+    }
+
+    /// Finder convention for right-click + multi-selection:
+    /// - Right-click on a card ALREADY in the selection: keep the
+    ///   selection, context menu will render the batch actions.
+    /// - Right-click on a card NOT in the selection: clear the multi,
+    ///   single-focus this card, then let the single-item menu show.
+    /// Prevents the confusing state where a stale multi-highlight stays
+    /// on screen while the user acts on a different card.
+    private func handleRightClick(on item: ClipItem) {
+        guard !state.isInSelection(item.id) else { return }
+        state.clearMultiSelection()
+        state.selectedID = item.id
     }
 
     /// Dispatches a carousel card click into the correct selection /

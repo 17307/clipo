@@ -123,6 +123,30 @@ private struct PinboardTabsView: View {
                 ) {
                     state.setFilter(filter)
                 }
+                .contextMenu { tabMenu(for: filter) }
+            }
+        }
+    }
+
+    /// Built-in tabs have nothing to configure; pinboard tabs offer
+    /// clear/delete so users don't have to open Settings every time
+    /// they want to purge a board.
+    @ViewBuilder
+    private func tabMenu(for filter: ClipFilter) -> some View {
+        if let board = state.pinboard(for: filter) {
+            Button("Clear items") {
+                state.clearPinboard(board)
+            }
+            Button("Delete pinboard", role: .destructive) {
+                state.deletePinboard(board)
+            }
+            Divider()
+            Button("Manage Pinboards…") {
+                state.appDelegate?.openSettings()
+            }
+        } else {
+            Button("Manage Pinboards…") {
+                state.appDelegate?.openSettings()
             }
         }
     }

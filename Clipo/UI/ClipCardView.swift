@@ -83,10 +83,23 @@ struct ClipCardView: View {
         .animation(reduceMotion ? nil : DesignTokens.hoverAnim, value: isHovering)
         .onHover { isHovering = $0 }
         .pointingHand()
+        .help(hoverTooltip)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
         .accessibilityHint("Item \(index). Press Return to paste, Space to preview.")
         .accessibilityAddTraits(isSelected || isMultiSelected ? [.isSelected, .isButton] : .isButton)
+    }
+
+    /// Shown on hover after the system tooltip delay (~1s). Gives the
+    /// user the exact capture time + source app without having to pop
+    /// the preview — scan-friendly for "when did I copy this?".
+    private var hoverTooltip: String {
+        let absolute = SharedFormatters.absoluteTime.string(from: item.lastCopiedAt)
+        let relative = SharedFormatters.relativeTimeFull.localizedString(
+            for: item.lastCopiedAt, relativeTo: .now
+        )
+        let source = AppIconCache.appName(forBundleID: item.sourceAppBundleID)
+        return "\(absolute) · \(relative)\nFrom \(source)"
     }
 
     /// Human-readable summary for VoiceOver. Composes kind + source + a

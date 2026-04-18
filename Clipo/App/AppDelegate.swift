@@ -32,8 +32,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             OnboardingWindowController.showIfNeeded()
         }
 
-        // Prompt for Accessibility permission (required for CGEvent paste) on first launch.
-        if !Accessibility.isTrusted(prompt: false) {
+        // Prompt for Accessibility permission (required for CGEvent paste)
+        // — but only if onboarding has already been dismissed. Otherwise
+        // the welcome window's own "Open System Settings" button is the
+        // designated path, and firing the system modal prompt at the same
+        // time as our welcome window races them against each other.
+        if Defaults[.didShowOnboarding], !Accessibility.isTrusted(prompt: false) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 _ = Accessibility.isTrusted(prompt: true)
             }
