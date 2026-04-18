@@ -12,6 +12,15 @@ struct ClipCarouselView: View {
     /// changed, treat this as a filter transition".
     @State private var lastSearchQuery: String = ""
 
+    /// Manual double-click detection — we can't use .onTapGesture(count: 2)
+    /// because registering both single and double variants makes SwiftUI
+    /// delay the single-click callback by ~200ms waiting to see if a
+    /// second tap lands. Tracking the last tap ourselves keeps single-
+    /// click instant while still firing a paste on the second tap within
+    /// the system double-click interval.
+    @State private var lastTapItemID: UUID?
+    @State private var lastTapAt: Date = .distantPast
+
     /// Scroll-to sentinel ID for "the very start of the carousel".
     private static let startAnchorID = "__carousel_start"
 
@@ -43,12 +52,50 @@ struct ClipCarouselView: View {
                                 )
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))
-                                .overlay(
-                                    ClickCatcher { clickCount, mods in
-                                        handleClick(on: item, clickCount: clickCount, mods: mods)
+                                // IMPORTANT: .contextMenu must come BEFORE
+                                // .onDrag / .onTapGesture. SwiftUI on macOS
+                                // makes right-click wait for left-button
+                                // gestures to resolve when the context menu
+                                // is attached outside them — with the drag
+                                // gesture in play that meant ~300ms of
+                                // stall before the menu appeared. Putting
+                                // it first (innermost in the modifier
+                                // chain) lets right-click dispatch directly.
+                                .contextMenu { contextMenu(for: item) }
+                                .onDrag({
+                                    // Arm an NSEvent-driven drag
+                                    // detector. It closes the panel the
+                                    // instant the cursor has moved >8pt
+                                    // (real drag motion) while mouseUp
+                                    // cancels it silently — much snappier
+                                    // than the previous 120ms timer and
+                                    // still safe against SwiftUI's
+                                    // speculative .onDrag firings on
+                                    // click-like gestures.
+                                    state.appDelegate?.armDragCloseDetection()
+                                    return DragProvider.makeProvider(for: item)
+                                }, preview: {
+                                    DragPreviewView(item: item)
+                                })
+                                // Single-tap only (no count:2) so SwiftUI
+                                // doesn't add a 200ms double-click
+                                // disambiguation delay. Paste is on Return
+                                // and ⌥1–⌥9.
+                                .simultaneousGesture(
+                                    TapGesture().modifiers(.shift).onEnded {
+                                        state.extendSelection(to: item.id)
+                                        focus = .carousel
                                     }
                                 )
-                                .contextMenu { contextMenu(for: item) }
+                                .simultaneousGesture(
+                                    TapGesture().modifiers(.command).onEnded {
+                                        state.toggleInSelection(item.id)
+                                        focus = .carousel
+                                    }
+                                )
+                                .onTapGesture {
+                                    handleCardTap(item)
+                                }
                             }
                         }
                     }
@@ -94,7 +141,11 @@ struct ClipCarouselView: View {
                     proxy.scrollTo(Self.startAnchorID, anchor: .leading)
                     return
                 }
-                withAnimation(DesignTokens.selectSpring) {
+                // Tight ease-out beats the selectSpring (response 0.32)
+                // for rapid click-to-click navigation — the long spring
+                // let each click pile on top of an unfinished animation,
+                // making switching feel sticky.
+                withAnimation(.easeOut(duration: 0.15)) {
                     proxy.scrollTo(new, anchor: .center)
                 }
             }
@@ -264,36 +315,49 @@ struct ClipCarouselView: View {
         state.extendSelection(to: state.items[next].id)
     }
 
-    /// Dispatches a carousel card click into the correct selection /
-    /// paste path based on modifiers:
-    /// - double click: paste (single item or stack if multi-selecting)
-    /// - ⇧ + click: extend selection from the current anchor
-    /// - ⌘ + click: toggle this card in/out of the multi-selection
-    /// - plain click: clear any multi-selection and single-focus this card
-    private func handleClick(on item: ClipItem, clickCount: Int, mods: NSEvent.ModifierFlags) {
-        if clickCount >= 2 {
-            if state.isMultiSelecting {
+    /// Per-tap dispatch that preserves fast single-click AND supports
+    /// double-click-to-paste without the 200ms gesture disambiguation
+    /// delay SwiftUI imposes on mixed count:1 + count:2 tap registrations.
+    ///
+    /// Behaviour:
+    /// - Second tap on the SAME card within the system double-click
+    ///   window → paste (stack if the card is part of the active
+    ///   multi-selection, single paste otherwise).
+    /// - Otherwise → the usual select + close-preview single-click.
+    ///   Clicking a card that's already in the multi-selection keeps
+    ///   the selection intact so a follow-up double-click can still
+    ///   trigger pasteStack.
+    private func handleCardTap(_ item: ClipItem) {
+        let now = Date.now
+        let doubleClickInterval = NSEvent.doubleClickInterval
+        let isDoubleTap = lastTapItemID == item.id
+            && now.timeIntervalSince(lastTapAt) < doubleClickInterval
+        // Reset tracking after a double-click so a third tap starts fresh.
+        lastTapItemID = isDoubleTap ? nil : item.id
+        lastTapAt = now
+
+        if isDoubleTap {
+            if state.isMultiSelecting && state.isInSelection(item.id) {
                 state.pasteStack()
             } else {
                 state.paste(item)
             }
             return
         }
-        if mods.contains(.shift) {
-            state.extendSelection(to: item.id)
+
+        // Single-click: if this card is already part of the multi-
+        // selection we keep the selection intact so the user can still
+        // double-click-paste the whole stack. For any other card,
+        // collapse back to single-focus on it.
+        if state.isInSelection(item.id) {
+            state.selectedID = item.id
             focus = .carousel
-            return
-        }
-        if mods.contains(.command) {
-            state.toggleInSelection(item.id)
+        } else {
+            state.clearMultiSelection()
+            state.selectedID = item.id
             focus = .carousel
-            return
+            state.appDelegate?.closePreview()
         }
-        // Plain click — collapse back to single-select on this card.
-        state.clearMultiSelection()
-        state.selectedID = item.id
-        focus = .carousel
-        state.appDelegate?.closePreview()
     }
 
     /// Suffix a menu item's title with the current binding's glyph so the

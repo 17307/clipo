@@ -56,6 +56,7 @@ final class AppState {
     /// this and swaps in a "No text to paste" message.
     var flashStackError: Bool = false
 
+
     /// Cached script list. Loaded once at launch (plus on-demand refresh
     /// from the Scripts settings pane) so the right-click menu doesn't hit
     /// disk on every open.
@@ -101,6 +102,12 @@ final class AppState {
     /// Bumped every time the panel is opened. RootView observes this to reset
     /// focus and scroll position on each re-entry.
     var openToken = UUID()
+
+    /// Bumped when we need to re-assert keyboard focus on the carousel
+    /// WITHOUT also scrolling back to the start or treating this as a
+    /// fresh panel session. Used after closing a preview so focus
+    /// returns to whichever card the user had selected.
+    var focusResetToken = UUID()
 
     weak var appDelegate: AppDelegate?
 

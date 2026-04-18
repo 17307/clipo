@@ -51,6 +51,11 @@ struct RootView: View {
             // The panel re-opened — reset focus back to the carousel.
             DispatchQueue.main.async { focus = .carousel }
         }
+        .onChange(of: state.focusResetToken) { _, _ in
+            // A preview just closed — re-assert carousel focus so keyboard
+            // navigation resumes, but don't touch scroll position.
+            DispatchQueue.main.async { focus = .carousel }
+        }
         .onKeyPress(.escape) {
             state.appDelegate?.closePanel()
             return .handled

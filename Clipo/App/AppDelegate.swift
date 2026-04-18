@@ -12,6 +12,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppState.shared.appDelegate = self
+        // Scrub any drag payload files left behind by previous sessions
+        // (successful drops leave temp files on disk; cleaning at launch
+        // keeps long-uptime caches bounded).
+        DragProvider.purgeStaleTempFiles()
 
         setupStatusBar()
         setupClipboard()
@@ -271,6 +275,77 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel?.close()
     }
 
+    // MARK: - Drag detection
+
+    /// Token that changes when a new armDragCloseDetection session starts.
+    /// The polling closure carries this token and aborts if it doesn't
+    /// match — prevents two overlapping sessions racing each other.
+    private var dragPollToken = 0
+
+    /// Called from a card's `.onDrag` closure. Polls mouse state:
+    /// - Movement > 8pt while button held → real drag. Fade the panel
+    ///   (alphaValue = 0) so WindowServer skips it during composite.
+    ///   The NSWindow itself stays in the window list and the SwiftUI
+    ///   view hierarchy is intact, so the drag source remains alive,
+    ///   and system-level drag cancel (⎋) still works.
+    /// - Button released without substantial motion → click or
+    ///   speculative `.onDrag` firing, stop polling silently.
+    ///
+    /// Polling instead of NSEvent monitors because once an AppKit drag
+    /// session is live, WindowServer routes mouseDragged events
+    /// directly into the drag subsystem and app-level monitors don't
+    /// see them. `NSEvent.mouseLocation` + `.pressedMouseButtons` are
+    /// passive state reads that work regardless.
+    func armDragCloseDetection() {
+        dragPollToken &+= 1
+        let token = dragPollToken
+        let start = NSEvent.mouseLocation
+        pollDragStart(token: token, start: start, attempt: 0)
+    }
+
+    private func pollDragStart(token: Int, start: NSPoint, attempt: Int) {
+        guard attempt < 80 else { return }  // 2s safety cap
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) { [weak self] in
+            guard let self, self.dragPollToken == token else { return }
+            // Released without moving → click / speculative firing.
+            guard NSEvent.pressedMouseButtons != 0 else { return }
+            let current = NSEvent.mouseLocation
+            if hypot(current.x - start.x, current.y - start.y) > 8 {
+                self.panel?.isDraggingOut = true
+                self.panel?.alphaValue = 0
+                self.pollDragEnd(token: token, attempt: 0)
+                return
+            }
+            self.pollDragStart(token: token, start: start, attempt: attempt + 1)
+        }
+    }
+
+    private func pollDragEnd(token: Int, attempt: Int) {
+        // 30s cap — drags usually end in under 2s but cross-monitor drops
+        // over a slow-syncing cloud-backed Finder can genuinely take
+        // longer. Firing the restore while the mouse is still held
+        // pops the panel back up mid-drag, so we err towards a high
+        // ceiling and log the timeout so we notice if it ever fires in
+        // the wild (would suggest a stuck poll or a user workflow the
+        // cap is too low for).
+        guard attempt < 1200 else {
+            NSLog("[Clipo] drag-out poll timed out after 30s; forcing panel restore")
+            panel?.alphaValue = 1
+            panel?.isDraggingOut = false
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) { [weak self] in
+            guard let self, self.dragPollToken == token else { return }
+            if NSEvent.pressedMouseButtons == 0 {
+                // Drag ended (drop or ⎋ cancel) — bring the panel back.
+                self.panel?.alphaValue = 1
+                self.panel?.isDraggingOut = false
+                return
+            }
+            self.pollDragEnd(token: token, attempt: attempt + 1)
+        }
+    }
+
     /// Exposed for IPC consumers (e.g. `clipocli health`).
     var panelIsPresented: Bool { panel?.isPresented == true }
 
@@ -355,39 +430,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Called by PreviewPanel when it lost key to some other window without
-    /// an explicit close() call. Three cases:
+    /// an explicit close() call.
     ///
-    /// - Focus went BACK to our main panel (user clicked on it, or
-    ///   dismissed the preview via its own Close). Close preview, keep
-    ///   main.
-    /// - Focus went to the previewPanel itself mid-transition. Ignore.
-    /// - Everything else — another of our windows (Settings, Onboarding)
-    ///   OR another app entirely (NSApp.keyWindow == nil in that case,
-    ///   because keyWindow is scoped to our own app). Close both panels
-    ///   so Clipo isn't left hovering while the user's attention has
-    ///   moved on.
+    /// Deferred to the next runloop tick: inside the synchronous
+    /// `resignKey` callback `NSApp.keyWindow` is still the OUTGOING
+    /// window (or momentarily nil) — reading it here would decide
+    /// "focus went nowhere, close everything" for every in-app click.
+    /// Defaulting to "keep main open" is the safe bias: we only
+    /// close main when we can positively identify a genuinely
+    /// external destination.
     func previewLostFocus() {
-        let newKey = NSApp.keyWindow
-        if newKey === panel {
-            previewPanel?.close()
-            return
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let newKey = NSApp.keyWindow
+            if newKey === self.panel {
+                self.previewPanel?.close()
+                return
+            }
+            if newKey === self.previewPanel {
+                // Preview somehow re-became key in the intervening
+                // tick — ignore.
+                return
+            }
+            // nil here really does mean "user is in another app" by
+            // the time we're one runloop tick past resignKey.
+            self.previewPanel?.close()
+            self.panel?.close()
         }
-        if newKey === previewPanel {
-            return
-        }
-        // Either nil (external app) or a different window of ours — in
-        // both situations the main panel should not stay on screen.
-        previewPanel?.close()
-        panel?.close()
     }
 
     private func handlePreviewClosed() {
         previewPanel = nil
         panel?.isShowingPreview = false
         if panel?.isPresented == true {
-            // Re-assert SwiftUI focus on the carousel (the preview may have
-            // taken keyboard focus while open).
-            AppState.shared.openToken = UUID()
+            // Refocus the carousel WITHOUT bumping openToken — the
+            // latter is observed by ClipCarouselView to snap scroll
+            // back to the start, which would yank the user away from
+            // whichever card they were just previewing.
+            AppState.shared.focusResetToken = UUID()
             panel?.makeKey()
         }
     }

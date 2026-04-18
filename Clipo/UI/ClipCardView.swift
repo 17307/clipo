@@ -81,7 +81,18 @@ struct ClipCardView: View {
         .animation(reduceMotion ? nil : DesignTokens.selectSpring, value: isSelected)
         .animation(reduceMotion ? nil : DesignTokens.selectSpring, value: isMultiSelected)
         .animation(reduceMotion ? nil : DesignTokens.hoverAnim, value: isHovering)
-        .onHover { isHovering = $0 }
+        .onHover { hovering in
+            // Skip hover state updates while the user is holding a
+            // mouse button — they're almost certainly mid-drag and
+            // the cursor is sweeping across other cards. Each
+            // isHovering toggle triggers a 0.18s scale/shadow
+            // animation; letting them stack while a drag session is
+            // alive adds compositor load that reads as drag-preview
+            // stutter. Next unmodified hover after mouseUp corrects
+            // the state if it was stale.
+            guard NSEvent.pressedMouseButtons == 0 else { return }
+            isHovering = hovering
+        }
         .pointingHand()
         .help(hoverTooltip)
         .accessibilityElement(children: .ignore)
