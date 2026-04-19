@@ -267,8 +267,18 @@ private struct SearchFieldView: View {
                     return .handled
                 }
                 .onKeyPress(.rightArrow) {
-                    guard state.searchQuery.isEmpty else { return .ignored }
+                    // Users typing a query and then habitually reaching
+                    // for → to move into the results expected that motion
+                    // to land on the next card, not sit at an already-
+                    // at-end caret. So: right arrow at (or past) the end
+                    // of the query jumps focus into the carousel and
+                    // advances the selection by one — same as hitting
+                    // Down then Right, in a single keystroke. Right
+                    // arrow anywhere inside the text still moves the
+                    // caret as normal.
+                    guard caretIsAtEndOfQuery() else { return .ignored }
                     state.selectNext()
+                    focus = .carousel
                     return .handled
                 }
             if !state.searchQuery.isEmpty {
@@ -300,6 +310,30 @@ private struct SearchFieldView: View {
                 )
         )
         .animation(DesignTokens.hoverAnim, value: isActive)
+    }
+
+    /// True when the text cursor sits at the very end of the current
+    /// query (or the query is empty, i.e. there's nowhere for the
+    /// cursor to be except "the end"). SwiftUI's `TextField` on macOS
+    /// delegates editing to a shared field editor — an `NSTextView` —
+    /// that becomes the window's `firstResponder` while the field is
+    /// focused. We read its selected range to decide whether → should
+    /// move the caret (cursor is mid-text) or switch over to the
+    /// carousel (cursor is at end).
+    ///
+    /// Collapsed-selection case (length == 0) must land exactly on the
+    /// last character offset. When the user has a text selection
+    /// (length > 0), right arrow first collapses it to the end without
+    /// navigating, which matches how every other macOS text field
+    /// behaves — only the next press navigates.
+    private func caretIsAtEndOfQuery() -> Bool {
+        if state.searchQuery.isEmpty { return true }
+        guard let editor = NSApp.keyWindow?.firstResponder as? NSTextView else {
+            return false
+        }
+        let range = editor.selectedRange()
+        let length = (editor.string as NSString).length
+        return range.length == 0 && range.location == length
     }
 }
 
