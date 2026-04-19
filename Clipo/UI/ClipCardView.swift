@@ -94,23 +94,10 @@ struct ClipCardView: View {
             isHovering = hovering
         }
         .pointingHand()
-        .help(hoverTooltip)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
         .accessibilityHint("Item \(index). Press Return to paste, Space to preview.")
         .accessibilityAddTraits(isSelected || isMultiSelected ? [.isSelected, .isButton] : .isButton)
-    }
-
-    /// Shown on hover after the system tooltip delay (~1s). Gives the
-    /// user the exact capture time + source app without having to pop
-    /// the preview — scan-friendly for "when did I copy this?".
-    private var hoverTooltip: String {
-        let absolute = SharedFormatters.absoluteTime.string(from: item.lastCopiedAt)
-        let relative = SharedFormatters.relativeTimeFull.localizedString(
-            for: item.lastCopiedAt, relativeTo: .now
-        )
-        let source = AppIconCache.appName(forBundleID: item.sourceAppBundleID)
-        return "\(absolute) · \(relative)\nFrom \(source)"
     }
 
     /// Human-readable summary for VoiceOver. Composes kind + source + a
@@ -298,9 +285,15 @@ private struct CardFooter: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            // Time label doubles as the tooltip affordance. Hovering it
+            // for ~1s (SwiftUI's system tooltip delay) surfaces the
+            // absolute capture time + source app — scoped to this tiny
+            // corner instead of the whole card so the tooltip doesn't
+            // keep flashing in and out as the cursor sweeps across cards.
             Text(relativeTime)
                 .font(DesignTokens.rounded(10, weight: .medium))
                 .foregroundStyle(DesignTokens.TextColor.tertiary)
+                .help(detailedTooltip)
             Spacer(minLength: 4)
             // Images that finished OCR advertise it with a small chip so
             // users know "this screenshot is also searchable by its
@@ -346,6 +339,20 @@ private struct CardFooter: View {
 
     private var relativeTime: String {
         SharedFormatters.relativeTime.localizedString(for: item.lastCopiedAt, relativeTo: .now)
+    }
+
+    /// Shown on hover over the relative-time label after the ~1s system
+    /// tooltip delay. Gives the user the exact capture time + source app
+    /// without having to pop the preview. Deliberately anchored to the
+    /// footer's time text (instead of the whole card) so a cursor just
+    /// passing through the carousel doesn't fire the tooltip.
+    private var detailedTooltip: String {
+        let absolute = SharedFormatters.absoluteTime.string(from: item.lastCopiedAt)
+        let relative = SharedFormatters.relativeTimeFull.localizedString(
+            for: item.lastCopiedAt, relativeTo: .now
+        )
+        let source = AppIconCache.appName(forBundleID: item.sourceAppBundleID)
+        return "\(absolute) · \(relative)\nFrom \(source)"
     }
 
     private var statText: String? {
