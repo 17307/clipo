@@ -44,10 +44,11 @@ xcodegen
 # Debug build
 xcodebuild -project Clipo.xcodeproj -scheme Clipo -configuration Debug build
 
-# Release + DMG
-bash scripts/build-release.sh
-bash scripts/make-dmg.sh
-open build/Clipo-0.1.0.dmg
+# Release DMG in one shot (clean → build → package → open in Finder)
+bash scripts/package.sh
+
+# Apple-Silicon-only build (matches the CI workflow output)
+ARCHS=arm64 bash scripts/package.sh
 ```
 
 ## Keyboard Reference

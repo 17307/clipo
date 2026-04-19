@@ -44,10 +44,11 @@ xcodegen
 # Debug 构建
 xcodebuild -project Clipo.xcodeproj -scheme Clipo -configuration Debug build
 
-# Release + DMG
-bash scripts/build-release.sh
-bash scripts/make-dmg.sh
-open build/Clipo-0.1.0.dmg
+# 一键打包 Release DMG（清理 → 编译 → 打包 → Finder 打开）
+bash scripts/package.sh
+
+# 只编 Apple Silicon 版本（和 CI 发布到 Releases 的 DMG 一致）
+ARCHS=arm64 bash scripts/package.sh
 ```
 
 ## 快捷键速查
