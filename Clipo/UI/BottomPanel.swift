@@ -57,6 +57,21 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         container.layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         container.layer?.borderWidth = 0.5
         container.layer?.borderColor = NSColor.separatorColor.cgColor
+        // Disable implicit CoreAnimation actions on geometry + border
+        // properties. Without this, every tick of the top-handle resize
+        // drag kicks off a fresh ~0.25s CAAction on the container's
+        // `bounds`, which lags the rounded-corner mask and border stroke
+        // behind the content and produces visible top-edge flicker at
+        // 60 Hz drag events.
+        container.layer?.actions = [
+            "bounds": NSNull(),
+            "position": NSNull(),
+            "cornerRadius": NSNull(),
+            "borderWidth": NSNull(),
+            "borderColor": NSNull(),
+            "sublayers": NSNull(),
+            "contents": NSNull(),
+        ]
         container.addSubview(host)
         NSLayoutConstraint.activate([
             host.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -110,7 +125,14 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
             width: visibleFrame.width,
             height: proposed
         )
+        // Suppress CA actions across the whole frame change so any
+        // sublayer animations (shadow, visual effect sample, host view)
+        // don't interpolate either — they'd otherwise trail the window
+        // bounds by a fraction of a frame and show as flicker.
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         setFrame(newFrame, display: true)
+        CATransaction.commit()
     }
 
     fileprivate func persistHeight() {
@@ -173,7 +195,11 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
             height: height
         )
         // No animation — the screen change itself is jarring enough; snapping
-        // into place is more trustworthy than a second slide.
+        // into place is more trustworthy than a second slide. Cancel any
+        // in-flight slide-in so it doesn't keep writing the old screen's
+        // coordinates over our new frame.
+        stopSlide()
+        alphaValue = 1
         setFrame(newFrame, display: true)
     }
 
@@ -193,35 +219,106 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
             height: height
         )
 
-        // Start just below the final resting position — sliding the full
-        // panel height from off-screen is compositionally expensive for
-        // a 1800 pt wide translucent window with shadow. A shorter travel
-        // (height * 0.7 ≈ just past the bottom edge of the final frame)
-        // feels nearly identical visually but cuts per-frame redraw time
-        // significantly so the slide reads as genuinely smooth.
-        let travel = height * 0.7
+        // Respect the system "Reduce motion" accessibility preference:
+        // snap directly to the final frame with no slide. Users who've
+        // enabled this setting have asked the OS to skip decorative
+        // animation system-wide, and our slide would override that.
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            setFrame(finalFrame, display: true)
+            alphaValue = 1
+            orderFrontRegardless()
+            makeKey()
+            isPresented = true
+            return
+        }
+
+        // Park the panel entirely below the visible area and order it
+        // in at full opacity. Nothing shows on screen because the
+        // window is below the dock — no alpha trick needed, which is
+        // important because a borderless .nonactivatingPanel with
+        // alphaValue == 0 is treated by macOS as "not really visible"
+        // and skips both CADisplayLink and render callbacks, leaving
+        // the panel stuck off-screen.
         let startFrame = NSRect(
             x: finalFrame.minX,
-            y: finalFrame.minY - travel,
+            y: visibleFrame.minY - height,
             width: width,
             height: height
         )
         setFrame(startFrame, display: false)
+        alphaValue = 1
         orderFrontRegardless()
         makeKey()
 
-        NSAnimationContext.runAnimationGroup { ctx in
-            // Snappier than .easeOut — 0.22s with a custom curve that
-            // starts fast and decelerates smoothly (similar to Apple's
-            // "spring" timing in Messages / Notification Center).
-            ctx.duration = 0.22
-            ctx.timingFunction = CAMediaTimingFunction(
-                controlPoints: 0.22, 1, 0.36, 1
-            )
-            ctx.allowsImplicitAnimation = true
-            animator().setFrame(finalFrame, display: true)
-        }
+        startSlideIn(from: startFrame, to: finalFrame)
         isPresented = true
+    }
+
+    // MARK: - Slide-in animation
+
+    /// NSWindow's `animator().setFrame` is silently a no-op on
+    /// borderless `.nonactivatingPanel` panels — the frame teleports,
+    /// so the panel reads as "flash in at the final position". Hand
+    /// the animation to a main-runloop Timer instead. CADisplayLink
+    /// looked like the right tool (auto vsync, ProMotion) but in
+    /// practice doesn't reliably start ticking when the link is
+    /// created in the same runloop iteration as `orderFrontRegardless`
+    /// — the view hasn't yet been bound to an active screen and the
+    /// link stays silent, leaving the panel stuck below the dock. The
+    /// Timer interval is set to 60 Hz so we don't issue redundant
+    /// ticks between vsyncs on non-ProMotion displays; the 0.24 s
+    /// slide is ~15 ticks, which is plenty for smooth motion and
+    /// keeps the synchronous `setFrame(display: true)` cost bounded.
+    private var slideTimer: Timer?
+    private var slideStartT: CFTimeInterval = 0
+    private var slideFromY: CGFloat = 0
+    private var slideToFrame: NSRect = .zero
+
+    private func startSlideIn(from startFrame: NSRect, to endFrame: NSRect) {
+        stopSlide()
+        slideFromY = startFrame.minY
+        slideToFrame = endFrame
+        slideStartT = CACurrentMediaTime()
+        // Apply t=0 synchronously so the first displayed frame already
+        // carries the animation's intended starting state instead of a
+        // one-tick gap where the panel has been ordered in but no
+        // frame has been issued yet.
+        applyFrame(elapsed: 0)
+        let t = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            self?.slideTick()
+        }
+        RunLoop.main.add(t, forMode: .common)
+        slideTimer = t
+    }
+
+    private func slideTick() {
+        let elapsed = CACurrentMediaTime() - slideStartT
+        applyFrame(elapsed: elapsed)
+        if elapsed >= panelSlideDuration {
+            stopSlide()
+        }
+    }
+
+    /// Shared math between the synchronous t=0 call and the per-tick
+    /// update. `raw` progresses linearly over `panelSlideDuration`;
+    /// `eased` is an easeOutExpo curve that launches fast and lands
+    /// gently, which reads as liquid motion rather than a hard pop.
+    private func applyFrame(elapsed: CFTimeInterval) {
+        let raw = min(1.0, elapsed / panelSlideDuration)
+        let eased: Double = raw >= 1 ? 1.0 : 1.0 - pow(2.0, -10.0 * raw)
+        let y = slideFromY + (slideToFrame.minY - slideFromY) * CGFloat(eased)
+        var f = slideToFrame
+        f.origin.y = y
+        if raw >= 1 {
+            setFrame(slideToFrame, display: true)
+        } else {
+            setFrame(f, display: true)
+        }
+    }
+
+    private func stopSlide() {
+        slideTimer?.invalidate()
+        slideTimer = nil
     }
 
     /// Intercept Return/Escape before they reach any SwiftUI text field.
@@ -335,6 +432,7 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         // Close instantly (no animation) so the previously-active app regains
         // keyboard focus immediately. This is required for CGEvent ⌘V paste
         // to land in the target app rather than our now-closing panel.
+        stopSlide()
         isPresented = false
         super.close()
         onClose()
@@ -372,6 +470,13 @@ private extension NSScreen {
 /// generic types can't have static stored properties.
 private let panelMinHeight: CGFloat = 280
 private let panelMaxHeight: CGFloat = 640
+
+/// Slide-in duration. 0.24 s is fast enough that the panel feels
+/// responsive when the hotkey is fired mid-task, long enough that the
+/// eye reads the motion as a single smooth glide rather than a pop.
+/// File-level for the same reason panelMinHeight/Max are — BottomPanel
+/// is generic and generic types can't have static stored properties.
+private let panelSlideDuration: CFTimeInterval = 0.24
 
 private extension CGFloat {
     func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
