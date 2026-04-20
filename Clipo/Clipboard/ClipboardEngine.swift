@@ -37,6 +37,37 @@ final class ClipboardEngine {
     // MARK: - Lifecycle
 
     func start() {
+        // Sync change count so anything copied while the engine was
+        // stopped (monitoring paused) isn't ingested retroactively on
+        // the next tick — the user intentionally took it offline.
+        // restart() skips this path because its purpose is different
+        // (reschedule with a new interval without losing a pending
+        // clipboard change).
+        changeCount = pasteboard.changeCount
+        rescheduleTimer()
+    }
+
+    /// Cancel the polling Timer. Used when the user flips "Pause
+    /// clipboard monitoring" — previously the tick still fired every
+    /// checkInterval and bailed on line 137, burning a poll cycle per
+    /// 0.5 s even while paused. Pair with start() to resume.
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    /// Reschedule the polling Timer with the current checkInterval.
+    /// Unlike start(), this is a no-op if the engine is currently
+    /// stopped (user has monitoring paused) — otherwise bumping the
+    /// interval in Settings would silently un-pause the engine.
+    /// Also doesn't touch changeCount: any in-flight pasteboard
+    /// change is still ingested on the next tick.
+    func restart() {
+        guard timer != nil else { return }
+        rescheduleTimer()
+    }
+
+    private func rescheduleTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(
             timeInterval: Defaults[.checkInterval],
@@ -46,8 +77,6 @@ final class ClipboardEngine {
             repeats: true
         )
     }
-
-    func restart() { start() }
 
     func onNewCopy(_ hook: @escaping OnNewCopyHook) {
         onNewCopyHooks.append(hook)

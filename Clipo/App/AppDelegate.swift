@@ -172,7 +172,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         engine.onNewCopy { item in
             Task { @MainActor in AppState.shared.add(item) }
         }
-        engine.start()
+        // Don't start polling if the user launched Clipo while
+        // monitoring was paused from the previous session. The
+        // observer below picks up when they un-pause.
+        if !Defaults[.ignoreEvents] {
+            engine.start()
+        }
     }
 
     // MARK: - Global hotkey
@@ -573,11 +578,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // Gray the menu bar icon when monitoring is paused.
+        // Gray the menu bar icon when monitoring is paused, and take
+        // the polling Timer offline so a paused engine isn't burning
+        // a poll cycle per checkInterval only to bail at the top of
+        // the tick.
         Task { [weak self] in
             for await value in Defaults.updates(.ignoreEvents, initial: false) {
                 guard let self else { return }
                 self.statusItem.button?.appearsDisabled = value
+                if value {
+                    ClipboardEngine.shared.stop()
+                } else {
+                    ClipboardEngine.shared.start()
+                }
             }
         }
 
