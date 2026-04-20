@@ -269,8 +269,62 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
             default:
                 break
             }
+
+            // IME fix: default focus on panel open is the carousel, which
+            // is a plain SwiftUI `.focusable()` view with no field editor.
+            // Typing a printable key there — especially the first pinyin
+            // letter of a Chinese search — gets swallowed by SwiftUI's
+            // onKeyPress and reinjected as a raw Latin character, skipping
+            // the input method entirely. Subsequent keys then compose
+            // normally because focus has since moved to the search field.
+            // Front-run SwiftUI: if a printable key arrives while the
+            // field editor isn't already first responder, promote the
+            // search field now so super.sendEvent below delivers this
+            // keyDown straight into the field editor's IME machinery.
+            if shouldRoutePrintableToSearch(event), let tf = findSearchField() {
+                makeFirstResponder(tf)
+            }
         }
         super.sendEvent(event)
+    }
+
+    /// True when the event is a plain letter/digit/URL-punct keystroke
+    /// that should seed a search — matches the filter the carousel's
+    /// onKeyPress used to apply. Modified keystrokes (⌘/⌥/⌃), arrows,
+    /// return, escape, space, and function keys all fall out here so
+    /// they continue to reach their existing handlers.
+    private func shouldRoutePrintableToSearch(_ event: NSEvent) -> Bool {
+        let flags = event.modifierFlags
+        if flags.contains(.command) || flags.contains(.option) || flags.contains(.control) {
+            return false
+        }
+        if let tv = firstResponder as? NSTextView, tv.isFieldEditor {
+            return false
+        }
+        guard let chars = event.charactersIgnoringModifiers,
+              let scalar = chars.unicodeScalars.first else {
+            return false
+        }
+        let ch = Character(scalar)
+        return ch.isLetter || ch.isNumber || "-_.@/:".contains(ch)
+    }
+
+    /// Depth-first walk for the first editable NSTextField in the panel.
+    /// The panel only ever hosts one — the search field in TopBarView —
+    /// so a linear scan is fine.
+    private func findSearchField() -> NSTextField? {
+        guard let root = contentView else { return nil }
+        return firstEditableTextField(in: root)
+    }
+
+    private func firstEditableTextField(in view: NSView) -> NSTextField? {
+        if let tf = view as? NSTextField, tf.isEditable {
+            return tf
+        }
+        for sub in view.subviews {
+            if let t = firstEditableTextField(in: sub) { return t }
+        }
+        return nil
     }
 
     override func close() {

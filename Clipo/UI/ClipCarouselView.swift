@@ -35,6 +35,13 @@ struct ClipCarouselView: View {
                         .frame(width: 0, height: 1)
                         .id(Self.startAnchorID)
 
+                    // Invisible AppKit bridge that force-hides the legacy
+                    // scrollbar macOS shows when a mouse is connected and
+                    // redirects vertical wheel ticks into horizontal scrolls.
+                    HorizontalScrollConfigurator()
+                        .frame(width: 0, height: 0)
+                        .allowsHitTesting(false)
+
                     // LazyHStack so a 500-item history doesn't materialize
                     // 500 ClipCardView bodies — only the roughly-7 visible
                     // cards and their immediate neighbours get built.
@@ -290,15 +297,11 @@ struct ClipCarouselView: View {
             }
             return .handled
         }
-        // Printable → route to search field.
-        if char.isLetter || char.isNumber || "-_.@/:".contains(char) {
-            let chars = press.characters
-            focus = .search
-            DispatchQueue.main.async {
-                state.searchQuery.append(chars)
-            }
-            return .handled
-        }
+        // Printable keystrokes are redirected to the search field at the
+        // NSWindow layer (BottomPanel.sendEvent) before SwiftUI ever sees
+        // the event — necessary so the IME composes the first keystroke
+        // instead of SwiftUI handing us a raw Latin char. Nothing for
+        // this handler to do on printable characters.
         return .ignored
     }
 
