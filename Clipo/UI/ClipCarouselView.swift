@@ -56,7 +56,13 @@ struct ClipCarouselView: View {
                                     index: index + 1,
                                     isSelected: state.selectedID == item.id,
                                     multiPosition: state.selectionIndex(of: item.id),
-                                    searchQuery: state.searchQuery
+                                    // Use the debounced `effectiveSearchQuery`
+                                    // (updated only when applyFilter runs),
+                                    // not the live `searchQuery` that changes
+                                    // on every keystroke — keeps cards from
+                                    // rebuilding their AttributedString
+                                    // highlights on each typed character.
+                                    searchQuery: state.effectiveSearchQuery
                                 )
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))
@@ -115,8 +121,10 @@ struct ClipCarouselView: View {
                 .id(state.activeFilter)
                 // Suppress ForEach diff animations when items change due to
                 // the search query — filtering should feel instant, not have
-                // cards fly in/out on every keystroke.
-                .animation(nil, value: state.searchQuery)
+                // cards fly in/out on every keystroke. Keyed on the
+                // debounced `effectiveSearchQuery` so the carousel body
+                // doesn't observe per-keystroke `searchQuery` changes.
+                .animation(nil, value: state.effectiveSearchQuery)
             }
             .scrollIndicators(.hidden)
             .onChange(of: state.activeFilter) { _, _ in

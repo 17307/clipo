@@ -16,6 +16,14 @@ final class AppState {
     var selectedID: UUID?
     var searchQuery: String = ""
 
+    /// Debounced mirror of `searchQuery`, updated only when
+    /// `applyFilter()` runs. Card bodies read this (not the live
+    /// `searchQuery`) for their search-highlight computation so that
+    /// fast typing doesn't force every visible card to rebuild its
+    /// AttributedString on every keystroke — they update only once
+    /// per debounce firing, along with the filtered `items` list.
+    var effectiveSearchQuery: String = ""
+
     /// Ordered IDs of items the user explicitly multi-selected. The order
     /// is click-sequence so that Enter-to-paste emits them in the exact
     /// sequence the user picked them. Empty means single-select mode — UI
@@ -254,6 +262,14 @@ final class AppState {
     /// Runs on every keystroke during search and every filter tab swap.
     /// Must stay O(N) in memory — no SwiftData round-trips.
     func applyFilter() {
+        // Publish the query-used-to-filter here so card bodies that
+        // read `effectiveSearchQuery` update once per filter run
+        // rather than once per keystroke — saves a full sweep of
+        // AttributedString rebuilds for every visible card during
+        // fast typing.
+        if effectiveSearchQuery != searchQuery {
+            effectiveSearchQuery = searchQuery
+        }
         let filtered: [ClipItem]
         switch activeFilter {
         case .history:
