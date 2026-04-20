@@ -4,6 +4,7 @@ import SwiftUI
 
 struct ClipCarouselView: View {
     @Environment(AppState.self) private var state
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState.Binding var focus: PanelFocus?
 
     @State private var filterJustChanged = false
@@ -151,9 +152,15 @@ struct ClipCarouselView: View {
                 // Tight ease-out beats the selectSpring (response 0.32)
                 // for rapid click-to-click navigation — the long spring
                 // let each click pile on top of an unfinished animation,
-                // making switching feel sticky.
-                withAnimation(.easeOut(duration: 0.15)) {
+                // making switching feel sticky. Respect Reduce Motion:
+                // snap the carousel instead of animating when the user
+                // has asked the system to skip decorative motion.
+                if reduceMotion {
                     proxy.scrollTo(new, anchor: .center)
+                } else {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        proxy.scrollTo(new, anchor: .center)
+                    }
                 }
             }
             .focusable()
