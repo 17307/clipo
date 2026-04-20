@@ -241,6 +241,13 @@ private struct SearchFieldView: View {
     @FocusState.Binding var focus: PanelFocus?
     let accent: Color
 
+    /// Debounce handle for applyFilter(). applyFilter is O(N) across
+    /// history items plus O(N·M) fuzzy scoring, which at 2000+ items
+    /// per keystroke stacks up fast enough for a typist to feel input
+    /// lag. Coalesce bursts of keystrokes into a single filter pass
+    /// ~120 ms after the user stops typing.
+    @State private var filterDebounce: Task<Void, Never>?
+
     var body: some View {
         @Bindable var state = state
         let isActive = focus == .search
@@ -253,8 +260,32 @@ private struct SearchFieldView: View {
                 .font(DesignTokens.rounded(12, weight: .regular))
                 .foregroundStyle(DesignTokens.TextColor.primary)
                 .focused($focus, equals: .search)
-                .onChange(of: state.searchQuery) { _, _ in state.applyFilter() }
-                .onSubmit { state.pasteSelected() }
+                .onChange(of: state.searchQuery) { old, new in
+                    // Clearing the query is a meaningful state change,
+                    // not just a filter refresh: applyFilter() preserves
+                    // the current selectedID if it still appears in the
+                    // new item set, and a previously-selected search
+                    // match almost always still appears in the full
+                    // list — just at its natural chronological position
+                    // rather than at the top of the filtered results.
+                    // The user reads that as "selection jumped to the
+                    // middle of the list after clear". Flush the filter
+                    // synchronously so `items` reflects the full list,
+                    // then pin the selection to the newest item.
+                    if !old.isEmpty && new.isEmpty {
+                        flushFilter()
+                        state.selectedID = state.items.first?.id
+                    } else {
+                        scheduleFilter()
+                    }
+                }
+                .onSubmit {
+                    // Flush the debounce before pasting — otherwise Enter
+                    // could fire against a stale filtered set if the user
+                    // types and hits Enter in under 120 ms.
+                    flushFilter()
+                    state.pasteSelected()
+                }
                 .onKeyPress(.downArrow) {
                     focus = .carousel
                     return .handled
@@ -284,7 +315,7 @@ private struct SearchFieldView: View {
             if !state.searchQuery.isEmpty {
                 Button {
                     state.searchQuery = ""
-                    state.applyFilter()
+                    flushFilter()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 11))
@@ -334,6 +365,28 @@ private struct SearchFieldView: View {
         let range = editor.selectedRange()
         let length = (editor.string as NSString).length
         return range.length == 0 && range.location == length
+    }
+
+    /// Queue applyFilter() to run after a short quiet period. Each
+    /// new keystroke cancels the previous pending task, so a burst
+    /// of typing only triggers one filter pass at the end.
+    private func scheduleFilter() {
+        filterDebounce?.cancel()
+        filterDebounce = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            guard !Task.isCancelled else { return }
+            state.applyFilter()
+        }
+    }
+
+    /// Cancel any pending debounce and run the filter synchronously.
+    /// Used by onSubmit and the clear button, where the caller
+    /// needs the filtered set to reflect the current query before
+    /// the next action (paste, refocus) fires.
+    private func flushFilter() {
+        filterDebounce?.cancel()
+        filterDebounce = nil
+        state.applyFilter()
     }
 }
 
