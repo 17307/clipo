@@ -24,13 +24,16 @@ struct HorizontalScrollConfigurator: NSViewRepresentable {
         private var monitor: Any?
         private weak var configured: NSScrollView?
 
-        // Smooth-scroll state — accumulates wheel deltas into a target
-        // offset and runs a display-link tick that eases the clip view
-        // toward it, so classic-mouse scrolling doesn't feel like a
-        // step function. See `queueDelta(_:)` and `tick(_:)`.
+        // Smooth-scroll state — tracks the *remaining signed
+        // displacement* the wheel still wants applied, and runs a
+        // display-link tick that applies an exponential fraction of
+        // it to the clip's current origin each frame. Velocity-style
+        // (not target-style) so concurrent writers — SwiftUI's
+        // `scrollTo` from click- or keyboard-driven selectedID
+        // changes — compose additively with us instead of fighting.
+        // See `queueDelta(_:)` and `tick(_:)`.
         private var displayLink: CADisplayLink?
-        private var targetX: CGFloat = 0
-        private var currentX: CGFloat = 0
+        private var velocityRemaining: CGFloat = 0
 
         /// Points moved per wheel notch. NSScrollView's native wheel
         /// handling for precise deltas uses ~1 pt per point, and classic
@@ -38,14 +41,16 @@ struct HorizontalScrollConfigurator: NSViewRepresentable {
         /// third of a card and matches the cadence users expect from
         /// macOS wheel scrolling elsewhere.
         private static let pointsPerNotch: CGFloat = 38
-        /// Per-frame easing factor. Each tick closes this fraction of
-        /// the remaining distance — so the motion is exponential
-        /// ease-out. 0.22 at 60 Hz reaches 99 % in ~18 frames (≈300 ms)
-        /// for a single notch; consecutive notches extend the target
-        /// and the animation glides cleanly through them.
+        /// Per-frame easing factor. Each tick applies this fraction of
+        /// the remaining displacement to the clip and subtracts the
+        /// same fraction from the pending total — exponential
+        /// ease-out. 0.22 at 60 Hz reaches 99 % in ~18 frames
+        /// (≈300 ms) for a single notch; consecutive notches add to
+        /// the remaining velocity and the animation glides cleanly
+        /// through them.
         private static let easing: CGFloat = 0.22
-        /// Stop the display link when we're this close to the target —
-        /// avoids forever-ticking sub-pixel approach.
+        /// Stop the display link when remaining displacement drops
+        /// below this — avoids forever-ticking sub-pixel approach.
         private static let epsilon: CGFloat = 0.5
 
         deinit {
@@ -113,39 +118,32 @@ struct HorizontalScrollConfigurator: NSViewRepresentable {
             }
         }
 
-        /// Instant wheel handling for "Reduce motion" users — same
-        /// math as `queueDelta` but writes the clip origin directly,
-        /// no display link, no easing.
+        /// Instant wheel handling for "Reduce motion" users — writes
+        /// the clip origin directly, no display link, no easing. Also
+        /// zeroes any pending smooth-scroll velocity so a reduce-
+        /// motion snap isn't followed by a residual glide.
         private func snapScroll(by dx: CGFloat, on sv: NSScrollView) {
             guard let doc = sv.documentView else { return }
             let clip = sv.contentView
             let maxX = max(doc.frame.width - clip.bounds.width, 0)
             var origin = clip.bounds.origin
             origin.x = min(max(origin.x - dx, 0), maxX)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
             clip.scroll(to: origin)
             sv.reflectScrolledClipView(clip)
-            // Keep cached state consistent in case a full-motion
-            // wheel tick arrives later (e.g. user toggled the
-            // preference mid-session).
-            currentX = origin.x
-            targetX = origin.x
+            CATransaction.commit()
+            velocityRemaining = 0
+            stopDisplayLink()
         }
 
-        /// Append a wheel-tick delta to the interpolation target and
-        /// make sure the display link is running. If a smooth scroll is
-        /// already in flight the delta stacks onto the existing target;
-        /// if not, we seed `currentX` from the clip view so keyboard
-        /// navigation or a SwiftUI `scrollTo` between bursts is taken
-        /// as the new origin.
+        /// Append a wheel-tick delta to the pending remaining
+        /// displacement and make sure the display link is running.
+        /// Consecutive notches accumulate; a notch in the opposite
+        /// direction partially cancels pending motion, which is the
+        /// desired "I changed my mind" behaviour.
         private func queueDelta(_ dx: CGFloat) {
-            guard let sv = configured, let doc = sv.documentView else { return }
-            let clip = sv.contentView
-            let maxX = max(doc.frame.width - clip.bounds.width, 0)
-            if displayLink == nil {
-                currentX = clip.bounds.origin.x
-                targetX = currentX
-            }
-            targetX = min(max(targetX - dx, 0), maxX)
+            velocityRemaining -= dx
             startDisplayLink()
         }
 
@@ -162,41 +160,48 @@ struct HorizontalScrollConfigurator: NSViewRepresentable {
         }
 
         @objc private func tick(_ link: CADisplayLink) {
-            guard let sv = configured else {
+            guard let sv = configured, let doc = sv.documentView else {
+                stopDisplayLink()
+                return
+            }
+            if abs(velocityRemaining) < Self.epsilon {
+                velocityRemaining = 0
                 stopDisplayLink()
                 return
             }
             let clip = sv.contentView
-            // Resync against the clip's actual origin if something
-            // external (SwiftUI `scrollTo` on keyboard nav, a
-            // programmatic move, selectedID change) wrote to it
-            // between our ticks. Treat external motion as an
-            // interruption: our target is now stale and resuming our
-            // animation would yank the clip backwards by the delta,
-            // so cancel instead — the next wheel notch will re-seed
-            // from the new origin naturally.
-            if abs(clip.bounds.origin.x - currentX) > 1 {
-                currentX = clip.bounds.origin.x
-                targetX = currentX
-                stopDisplayLink()
-                return
-            }
-            let diff = targetX - currentX
-            if abs(diff) < Self.epsilon {
-                currentX = targetX
-                apply(clip: clip, on: sv)
-                stopDisplayLink()
-                return
-            }
-            currentX += diff * Self.easing
-            apply(clip: clip, on: sv)
-        }
-
-        private func apply(clip: NSClipView, on sv: NSScrollView) {
+            let maxX = max(doc.frame.width - clip.bounds.width, 0)
+            // Apply a fraction of the remaining signed displacement
+            // to the clip's *current* origin and subtract the same
+            // fraction from the pending total. Composes additively
+            // with any other writer on clip.bounds.origin.
+            let step = velocityRemaining * Self.easing
+            velocityRemaining -= step
             var origin = clip.bounds.origin
-            origin.x = currentX
-            clip.setBoundsOrigin(origin)
+            let proposedX = origin.x + step
+            let clampedX = min(max(proposedX, 0), maxX)
+            origin.x = clampedX
+            // If the step would have pushed past a boundary, drop
+            // the remaining velocity to zero. Without this, a user
+            // who wheels hard while already at an edge accumulates
+            // velocity pointing into the wall; it then takes several
+            // opposite-direction wheel notches to overcome the
+            // residue before visible motion resumes, which feels
+            // like broken input.
+            if clampedX != proposedX {
+                velocityRemaining = 0
+            }
+            // Disable implicit CA actions on the bounds change.
+            // Without this each tick's scroll(to:) spawns a default
+            // ~0.25 s layer animation that's instantly replaced by
+            // the next tick's — the visual overlap of those
+            // in-flight mini-animations reads as jitter on every
+            // wheel scroll, most visibly on the first tick.
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            clip.scroll(to: origin)
             sv.reflectScrolledClipView(clip)
+            CATransaction.commit()
         }
 
         private func removeMonitor() {
