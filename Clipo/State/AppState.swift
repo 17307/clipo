@@ -17,11 +17,12 @@ final class AppState {
     var searchQuery: String = ""
 
     /// Debounced mirror of `searchQuery`, updated only when
-    /// `applyFilter()` runs. Card bodies read this (not the live
-    /// `searchQuery`) for their search-highlight computation so that
-    /// fast typing doesn't force every visible card to rebuild its
-    /// AttributedString on every keystroke — they update only once
-    /// per debounce firing, along with the filtered `items` list.
+    /// `applyFilter()` runs. The carousel keys its
+    /// `.animation(nil, value:)` ForEach-diff suppressor off this
+    /// instead of the live `searchQuery` so fast typing doesn't
+    /// force the carousel body to re-evaluate on every keystroke —
+    /// only once per filter run, along with the filtered `items`
+    /// list.
     var effectiveSearchQuery: String = ""
 
     /// Ordered IDs of items the user explicitly multi-selected. The order
@@ -259,14 +260,13 @@ final class AppState {
     func refresh() { reload() }
 
     /// Re-derive the visible `items` from the already-fetched `allItems`.
-    /// Runs on every keystroke during search and every filter tab swap.
-    /// Must stay O(N) in memory — no SwiftData round-trips.
+    /// Runs once per search debounce firing and on every filter tab
+    /// swap. Must stay O(N) in memory — no SwiftData round-trips.
     func applyFilter() {
-        // Publish the query-used-to-filter here so card bodies that
-        // read `effectiveSearchQuery` update once per filter run
-        // rather than once per keystroke — saves a full sweep of
-        // AttributedString rebuilds for every visible card during
-        // fast typing.
+        // Publish the query-used-to-filter here so the carousel's
+        // `.animation(nil, value: effectiveSearchQuery)` suppressor
+        // only invalidates the carousel body once per filter run —
+        // not once per keystroke while the debounce is still pending.
         if effectiveSearchQuery != searchQuery {
             effectiveSearchQuery = searchQuery
         }

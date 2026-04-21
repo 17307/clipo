@@ -55,14 +55,7 @@ struct ClipCarouselView: View {
                                     item: item,
                                     index: index + 1,
                                     isSelected: state.selectedID == item.id,
-                                    multiPosition: state.selectionIndex(of: item.id),
-                                    // Use the debounced `effectiveSearchQuery`
-                                    // (updated only when applyFilter runs),
-                                    // not the live `searchQuery` that changes
-                                    // on every keystroke — keeps cards from
-                                    // rebuilding their AttributedString
-                                    // highlights on each typed character.
-                                    searchQuery: state.effectiveSearchQuery
+                                    multiPosition: state.selectionIndex(of: item.id)
                                 )
                                 .id(item.id)
                                 .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius))
