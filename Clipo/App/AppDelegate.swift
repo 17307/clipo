@@ -171,6 +171,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let engine = ClipboardEngine.shared
         engine.onNewCopy { item in
             Task { @MainActor in AppState.shared.add(item) }
+            // Warm the icon + display-name caches off-main so the next
+            // panel open renders this item's CardHeader without hitting
+            // LaunchServices on the main thread.
+            AppIconCache.preload(bundleID: item.sourceAppBundleID)
         }
         // Don't start polling if the user launched Clipo while
         // monitoring was paused from the previous session. The
@@ -243,7 +247,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func togglePanel() {
         guard let panel else { return }
         if panel.isPresented {
-            panel.close()
+            panel.closeAnimated()
         } else {
             // Batch all state mutations inside one transaction so SwiftUI
             // observes them as a single atomic change and doesn't try to
@@ -460,7 +464,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // nil here really does mean "user is in another app" by
             // the time we're one runloop tick past resignKey.
             self.previewPanel?.close()
-            self.panel?.close()
+            self.panel?.closeAnimated()
         }
     }
 

@@ -33,6 +33,8 @@ enum AppIconCache {
     }()
 
     /// Source-app icon by bundle id. Nil means no bundle was given.
+    /// Call sites on the render path should prefer `cachedIcon` + `preload`
+    /// so the LaunchServices/disk round-trip happens off-main.
     static func icon(forBundleID bundleID: String?, size: CGFloat = 20) -> NSImage? {
         guard let bundleID else { return nil }
         let key = "app:\(bundleID)@\(Int(size))" as NSString
@@ -46,6 +48,33 @@ enum AppIconCache {
         img.size = NSSize(width: size, height: size)
         store(img, forKey: key, size: size)
         return img
+    }
+
+    /// Cache peek — returns nil without any LaunchServices or disk work.
+    /// Used by views that want the main-thread fast path and accept a
+    /// placeholder until `preload` finishes.
+    static func cachedIcon(forBundleID bundleID: String?, size: CGFloat = 20) -> NSImage? {
+        guard let bundleID else { return nil }
+        let key = "app:\(bundleID)@\(Int(size))" as NSString
+        return cache.object(forKey: key)
+    }
+
+    /// Warm both the icon and name caches for a bundle id off-main. Safe
+    /// to call from any thread; idempotent on already-cached entries.
+    /// Paired with `cachedIcon`/`cachedAppName` so render paths never
+    /// stall on LaunchServices.
+    static func preload(bundleID: String?, iconSize: CGFloat = 20) {
+        guard let bundleID else { return }
+        let iconKey = "app:\(bundleID)@\(Int(iconSize))" as NSString
+        let nameKey = bundleID as NSString
+        if cache.object(forKey: iconKey) != nil,
+           nameCache.object(forKey: nameKey) != nil {
+            return
+        }
+        Task.detached(priority: .utility) {
+            _ = icon(forBundleID: bundleID, size: iconSize)
+            _ = appName(forBundleID: bundleID)
+        }
     }
 
     /// Localised display name for an app bundle id, cached per lookup so
@@ -63,6 +92,14 @@ enum AppIconCache {
         }
         nameCache.setObject(name as NSString, forKey: key)
         return name
+    }
+
+    /// Cache peek for display names — nil when not yet resolved. Render
+    /// paths combine this with `preload` and a bundleID fallback text.
+    static func cachedAppName(forBundleID bundleID: String?) -> String? {
+        guard let bundleID else { return nil }
+        let key = bundleID as NSString
+        return nameCache.object(forKey: key) as String?
     }
 
     /// Icon for a file URL, keyed by extension so same-type files share.

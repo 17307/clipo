@@ -54,6 +54,7 @@ struct ClipCarouselView: View {
                                 ClipCardView(
                                     item: item,
                                     index: index + 1,
+                                    quickPasteBadge: quickPasteBadge(at: index),
                                     isSelected: state.selectedID == item.id,
                                     multiPosition: state.selectionIndex(of: item.id)
                                 )
@@ -180,6 +181,16 @@ struct ClipCarouselView: View {
     /// the selection uses the single-item menu but doesn't clear the
     /// selection — Mac convention is lenient here, and the user can always
     /// hit Esc to clear.
+    /// ⌥N badge digit for the card at `absoluteIndex`, counted from the
+    /// current selection (selected = 1, next = 2, …). Returns nil when the
+    /// card is before the selection or beyond the 9-card window — those
+    /// cards aren't reachable via ⌥1–⌥9 and shouldn't carry a badge.
+    private func quickPasteBadge(at absoluteIndex: Int) -> Int? {
+        let selIdx = state.selectedItemIndex ?? 0
+        let offset = absoluteIndex - selIdx + 1
+        return (offset >= 1 && offset <= 9) ? offset : nil
+    }
+
     @ViewBuilder
     private func contextMenu(for item: ClipItem) -> some View {
         if state.isMultiSelecting && state.isInSelection(item.id) {

@@ -80,13 +80,12 @@ final class AppState {
     }
 
     /// Top-bar tab order: History, Images, Files, then user-defined Pinboards.
-    var topBarFilters: [ClipFilter] {
-        var list: [ClipFilter] = [.history, .images, .files]
-        for board in pinboards {
-            list.append(.pinboard(board.id))
-        }
-        return list
-    }
+    /// Refreshed from `refreshPinboards()` on every pinboard mutation.
+    /// Stored rather than computed so a body eval reading this (once per
+    /// `PinboardTabsView` render) doesn't rebuild the list — @Observable's
+    /// subscription granularity is coarse and a computed property gets
+    /// re-evaluated on every property change.
+    private(set) var topBarFilters: [ClipFilter] = [.history, .images, .files]
 
     func pinboard(for filter: ClipFilter) -> Pinboard? {
         if case let .pinboard(id) = filter {
@@ -356,30 +355,38 @@ final class AppState {
     /// Subsequence match + cluster bonus. Returns nil when any query char
     /// can't be found in order. Keeps it honest (no false positives) while
     /// still tolerating typos within a word.
+    ///
+    /// Iterates `query` and `target` directly over their Character
+    /// sequences, tracking position with integer offsets. An earlier
+    /// revision materialised both strings as `[Character]` arrays per
+    /// call — on a 2000-item history that was ~4000 array allocations
+    /// per search, which showed up as GC pressure + frame drop on
+    /// live-typing searches.
     private static func fuzzyScore(query: String, in target: String) -> Int? {
-        let tChars = Array(target)
-        let qChars = Array(query)
-        guard !qChars.isEmpty, !tChars.isEmpty else { return nil }
+        guard !query.isEmpty, !target.isEmpty else { return nil }
         var score = 0
         var lastMatch = -1
         var firstMatch = -1
-        var t = 0
-        for q in qChars {
-            var found = false
-            while t < tChars.count {
-                if tChars[t] == q {
-                    if firstMatch == -1 { firstMatch = t }
-                    // Adjacency bonus — matches next to each other score
-                    // much higher than matches spread across the title.
-                    if lastMatch == t - 1 { score += 5 } else { score += 1 }
-                    lastMatch = t
-                    t += 1
-                    found = true
-                    break
-                }
-                t += 1
+        var tIter = target.makeIterator()
+        var tOffset = 0
+        // Advance `tIter` until we find `needle`, updating `tOffset` for
+        // the cluster/prefix scoring. Returns the offset of the match or
+        // nil when target is exhausted without a match.
+        func consumeUntil(_ needle: Character) -> Int? {
+            while let ch = tIter.next() {
+                let at = tOffset
+                tOffset += 1
+                if ch == needle { return at }
             }
-            if !found { return nil }
+            return nil
+        }
+        for q in query {
+            guard let matchAt = consumeUntil(q) else { return nil }
+            if firstMatch == -1 { firstMatch = matchAt }
+            // Adjacency bonus — matches next to each other score much
+            // higher than matches spread across the title.
+            if lastMatch == matchAt - 1 { score += 5 } else { score += 1 }
+            lastMatch = matchAt
         }
         // Prefer matches that start early in the title.
         score += max(0, 10 - firstMatch)
@@ -396,6 +403,12 @@ final class AppState {
            !pinboards.contains(where: { $0.id == id }) {
             activeFilter = .history
         }
+        // Rebuild the top-bar list in lockstep with the underlying pinboards.
+        var list: [ClipFilter] = [.history, .images, .files]
+        for board in pinboards {
+            list.append(.pinboard(board.id))
+        }
+        topBarFilters = list
     }
 
     /// Publicly callable variant for Defaults observers to trim the history
@@ -593,6 +606,27 @@ final class AppState {
     func selectByIndex(_ index: Int) {
         guard index >= 0, index < items.count else { return }
         selectedID = items[index].id
+    }
+
+    /// 0-based position of the currently selected card in `items`, or nil
+    /// when nothing is selected. Callers that want a safe default (e.g.
+    /// "start from the head of the list") should coalesce with 0.
+    var selectedItemIndex: Int? {
+        guard let id = selectedID else { return nil }
+        return items.firstIndex(where: { $0.id == id })
+    }
+
+    /// ⌥N quick-paste: pick the Nth card counted from the current
+    /// selection (selected = 1, next = 2, …). Returns true if a target
+    /// was found so the caller can chain `pasteSelected()`.
+    @discardableResult
+    func selectByQuickPasteDigit(_ digit: Int) -> Bool {
+        guard digit >= 1, digit <= 9 else { return false }
+        let start = selectedItemIndex ?? 0
+        let target = start + digit - 1
+        guard target < items.count else { return false }
+        selectedID = items[target].id
+        return true
     }
 
     // MARK: - Multi-selection

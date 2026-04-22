@@ -5,6 +5,13 @@ import SwiftUI
 struct ClipCardView: View {
     let item: ClipItem
     let index: Int
+    /// The digit shown in the ⌥1–⌥9 quick-paste badge, counted from
+    /// the currently selected card (selected = 1, incrementing from
+    /// there). nil hides the badge — used for cards before the
+    /// selection or beyond the 9-card window. Computed by the
+    /// carousel parent, for the same reason `multiPosition` is:
+    /// observing `selectedID` here would cascade re-renders.
+    let quickPasteBadge: Int?
     let isSelected: Bool
     /// 1-based position in the paste stack when this card is part of a
     /// multi-selection. Nil means the card is not currently multi-selected.
@@ -25,7 +32,7 @@ struct ClipCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            CardHeader(item: item, index: index)
+            CardHeader(item: item, quickPasteBadge: quickPasteBadge)
             Rectangle()
                 .fill(DesignTokens.Surface.divider)
                 .frame(height: 0.5)
@@ -152,13 +159,22 @@ struct ClipCardView: View {
 
 private struct CardHeader: View {
     let item: ClipItem
-    let index: Int
+    /// Digit to show in the ⌥N badge; nil hides it. Precomputed by
+    /// the carousel so this view doesn't need to observe
+    /// `AppState.selectedID`.
+    let quickPasteBadge: Int?
 
     @Default(.showSourceIcon) private var showSourceIcon
 
     // Does NOT read AppState. `isOptionDown` changes are isolated to
     // `IndexBadge` so CardHeader itself doesn't re-render each time Option
     // is pressed.
+
+    /// Icon resolved from `AppIconCache`. Initialised from the cache peek
+    /// on first body eval (no main-thread LaunchServices), filled in by
+    /// the `.task` modifier below when the cache is cold.
+    @State private var resolvedIcon: NSImage?
+    @State private var resolvedName: String?
 
     var body: some View {
         HStack(spacing: 7) {
@@ -176,12 +192,32 @@ private struct CardHeader: View {
                     .foregroundStyle(DesignTokens.TextColor.secondary)
             }
             Spacer(minLength: 4)
-            if index <= 9 {
-                IndexBadge(index: index)
+            if let badge = quickPasteBadge, badge >= 1, badge <= 9 {
+                IndexBadge(index: badge)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        // Async resolve only when we actually render the icon/name row.
+        // `.task(id:)` reruns when the card is recycled onto a different
+        // bundleID (LazyHStack reuse).
+        .task(id: item.sourceAppBundleID) {
+            if !showSourceIcon { return }
+            let bundle = item.sourceAppBundleID
+            // Fast path — already cached, no detached Task hop.
+            if let img = AppIconCache.cachedIcon(forBundleID: bundle),
+               let name = AppIconCache.cachedAppName(forBundleID: bundle) {
+                resolvedIcon = img
+                resolvedName = name
+                return
+            }
+            // Slow path — hit LaunchServices off-main.
+            let (img, name) = await Task.detached(priority: .userInitiated) {
+                (AppIconCache.icon(forBundleID: bundle), AppIconCache.appName(forBundleID: bundle))
+            }.value
+            resolvedIcon = img
+            resolvedName = name
+        }
     }
 
     private var relativeTime: String {
@@ -190,7 +226,11 @@ private struct CardHeader: View {
 
     @ViewBuilder
     private var sourceIcon: some View {
-        if let img = AppIconCache.icon(forBundleID: item.sourceAppBundleID) {
+        // Prefer the async-resolved icon; fall back to a direct cache peek
+        // so a cache-warm bundle renders correctly on the very first body
+        // eval, before `.task` has had a chance to run.
+        let img = resolvedIcon ?? AppIconCache.cachedIcon(forBundleID: item.sourceAppBundleID)
+        if let img {
             Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
         } else {
             Image(systemName: "app.dashed")
@@ -199,7 +239,13 @@ private struct CardHeader: View {
     }
 
     private var sourceName: String {
-        AppIconCache.appName(forBundleID: item.sourceAppBundleID)
+        // Same pattern as `sourceIcon` — async-resolved first, cache peek
+        // second, bundle id as a last-resort so we never show "Unknown".
+        if let name = resolvedName { return name }
+        if let cached = AppIconCache.cachedAppName(forBundleID: item.sourceAppBundleID) {
+            return cached
+        }
+        return item.sourceAppBundleID ?? "Unknown"
     }
 
 }

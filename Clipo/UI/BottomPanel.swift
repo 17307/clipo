@@ -143,7 +143,7 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
     }
 
     func toggle() {
-        isPresented ? close() : open()
+        isPresented ? closeAnimated() : open()
     }
 
     /// Force SwiftUI to resolve its initial layout at launch instead of
@@ -196,14 +196,20 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         )
         // No animation — the screen change itself is jarring enough; snapping
         // into place is more trustworthy than a second slide. Cancel any
-        // in-flight slide-in so it doesn't keep writing the old screen's
-        // coordinates over our new frame.
+        // in-flight slide animation (either direction) so it doesn't keep
+        // writing the old screen's coordinates over our new frame.
         stopSlide()
+        stopSlideOut()
         alphaValue = 1
         setFrame(newFrame, display: true)
     }
 
     func open() {
+        // Cancel any in-flight slide-out (e.g. the user hit the hotkey
+        // again while the panel was animating away) so we don't fight
+        // it with the incoming slide-in.
+        stopSlideOut()
+
         guard let screen = NSScreen.forMouse() else { return }
         let visibleFrame = screen.visibleFrame
 
@@ -232,93 +238,184 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
             return
         }
 
-        // Park the panel entirely below the visible area and order it
-        // in at full opacity. Nothing shows on screen because the
-        // window is below the dock — no alpha trick needed, which is
-        // important because a borderless .nonactivatingPanel with
-        // alphaValue == 0 is treated by macOS as "not really visible"
-        // and skips both CADisplayLink and render callbacks, leaving
-        // the panel stuck off-screen.
         let startFrame = NSRect(
             x: finalFrame.minX,
             y: visibleFrame.minY - height,
             width: width,
             height: height
         )
+
+        // Park the panel at startFrame (entirely below visibleFrame),
+        // order it in, then drive the slide from a main-runloop Timer
+        // that calls `setFrame(display: true)` each tick. The Timer
+        // fires regardless of window visibility — unlike
+        // `NSView.displayLink`, which pauses while the host view's
+        // window is off-screen and therefore never ticked during a
+        // slide that starts below the screen.
+        //
+        // `constrainFrameRect` is overridden (see below) so AppKit
+        // doesn't snap the below-screen startFrame back into
+        // visibleFrame on secondary displays — that snap used to
+        // collapse the slide's start and end into nearly the same
+        // position, reading as "wait a beat, then flash in".
         setFrame(startFrame, display: false)
         alphaValue = 1
         orderFrontRegardless()
         makeKey()
-
-        startSlideIn(from: startFrame, to: finalFrame)
         isPresented = true
+
+        // Defer one runloop tick so the orderFrontRegardless commit
+        // settles before the Timer's first setFrame runs. Without it
+        // the slide's first tick can race the initial window-server
+        // placement and the panel briefly paints at finalFrame.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isPresented else { return }
+            self.startSlideIn(from: startFrame, to: finalFrame)
+        }
     }
 
-    // MARK: - Slide-in animation
+    // MARK: - Slide animations
 
-    /// NSWindow's `animator().setFrame` is silently a no-op on
-    /// borderless `.nonactivatingPanel` panels — the frame teleports,
-    /// so the panel reads as "flash in at the final position". Hand
-    /// the animation to a main-runloop Timer instead. CADisplayLink
-    /// looked like the right tool (auto vsync, ProMotion) but in
-    /// practice doesn't reliably start ticking when the link is
-    /// created in the same runloop iteration as `orderFrontRegardless`
-    /// — the view hasn't yet been bound to an active screen and the
-    /// link stays silent, leaving the panel stuck below the dock. The
-    /// Timer interval is set to 60 Hz so we don't issue redundant
-    /// ticks between vsyncs on non-ProMotion displays; the 0.24 s
-    /// slide is ~15 ticks, which is plenty for smooth motion and
-    /// keeps the synchronous `setFrame(display: true)` cost bounded.
+    /// Drive the slide ourselves with a main-runloop Timer and per-tick
+    /// `setFrame(display: true)`. Earlier attempts used
+    /// `animator().setFrame` inside NSAnimationContext; on the primary
+    /// display that path is smooth, but on secondary displays the
+    /// animation timeline ran its full duration without committing
+    /// per-frame window positions to the window server — the panel
+    /// stayed below the screen, then snapped to the end frame,
+    /// reading as "wait a beat, then flash in". Borderless
+    /// `.nonactivatingPanel` windows appear to be the trigger; the
+    /// window server refuses to composite intermediate frames on
+    /// auxiliary displays.
+    ///
+    /// CADisplayLink via `NSView.displayLink(target:selector:)` was
+    /// the next attempt, but the link pauses whenever the host view's
+    /// window isn't on-screen — and our slide-in starts with the
+    /// window parked entirely below visibleFrame. The link was born
+    /// paused and the panel never appeared at all.
+    ///
+    /// A Timer is immune to both: it fires regardless of window
+    /// visibility, and each tick explicitly calls
+    /// `setFrame(display: true)` which forces a window-server commit
+    /// on every display. 120 Hz matches ProMotion; on 60 Hz displays
+    /// we simply redraw 2x more than we need to, which is cheap
+    /// (setFrame on a borderless panel is fast).
+    private var slideOutInFlight = false
     private var slideTimer: Timer?
     private var slideStartT: CFTimeInterval = 0
-    private var slideFromY: CGFloat = 0
-    private var slideToFrame: NSRect = .zero
+    private var slideDuration: CFTimeInterval = 0
+    private var slideStartFrame: NSRect = .zero
+    private var slideEndFrame: NSRect = .zero
+    private var slideCompletion: (() -> Void)?
 
-    private func startSlideIn(from startFrame: NSRect, to endFrame: NSRect) {
+    private func runSlide(from start: NSRect,
+                          to end: NSRect,
+                          duration: CFTimeInterval,
+                          completion: (() -> Void)? = nil) {
         stopSlide()
-        slideFromY = startFrame.minY
-        slideToFrame = endFrame
+        slideStartFrame = start
+        slideEndFrame = end
+        slideDuration = duration
+        slideCompletion = completion
         slideStartT = CACurrentMediaTime()
-        // Apply t=0 synchronously so the first displayed frame already
-        // carries the animation's intended starting state instead of a
-        // one-tick gap where the panel has been ordered in but no
-        // frame has been issued yet.
-        applyFrame(elapsed: 0)
-        let t = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+        // Apply t=0 synchronously so the first on-screen state matches
+        // the animation's intended start, not whatever the window was
+        // showing a moment earlier.
+        applySlideFrame(elapsed: 0)
+
+        let t = Timer(timeInterval: 1.0 / 120.0, repeats: true) { [weak self] _ in
             self?.slideTick()
         }
+        // .common so the slide keeps ticking during tracking loops
+        // (e.g. a live-resize on another window).
         RunLoop.main.add(t, forMode: .common)
         slideTimer = t
     }
 
     private func slideTick() {
         let elapsed = CACurrentMediaTime() - slideStartT
-        applyFrame(elapsed: elapsed)
-        if elapsed >= panelSlideDuration {
+        applySlideFrame(elapsed: elapsed)
+        if elapsed >= slideDuration {
+            let completion = slideCompletion
             stopSlide()
+            completion?()
         }
     }
 
-    /// Shared math between the synchronous t=0 call and the per-tick
-    /// update. `raw` progresses linearly over `panelSlideDuration`;
-    /// `eased` is an easeOutExpo curve that launches fast and lands
-    /// gently, which reads as liquid motion rather than a hard pop.
-    private func applyFrame(elapsed: CFTimeInterval) {
-        let raw = min(1.0, elapsed / panelSlideDuration)
+    /// easeOutExpo — launches fast and lands gently. Reads as liquid
+    /// motion rather than a hard pop.
+    private func applySlideFrame(elapsed: CFTimeInterval) {
+        let raw = min(1.0, elapsed / slideDuration)
         let eased: Double = raw >= 1 ? 1.0 : 1.0 - pow(2.0, -10.0 * raw)
-        let y = slideFromY + (slideToFrame.minY - slideFromY) * CGFloat(eased)
-        var f = slideToFrame
-        f.origin.y = y
+        let dy = slideEndFrame.minY - slideStartFrame.minY
         if raw >= 1 {
-            setFrame(slideToFrame, display: true)
+            setFrame(slideEndFrame, display: true)
         } else {
+            var f = slideEndFrame
+            f.origin.y = slideStartFrame.minY + dy * CGFloat(eased)
             setFrame(f, display: true)
         }
+    }
+
+    private func startSlideIn(from startFrame: NSRect, to endFrame: NSRect) {
+        runSlide(from: startFrame, to: endFrame, duration: panelSlideDuration)
     }
 
     private func stopSlide() {
         slideTimer?.invalidate()
         slideTimer = nil
+        slideCompletion = nil
+    }
+
+    // MARK: - Slide-out animation
+
+    /// Animated inverse of `open()`. Slides the panel back down below
+    /// the dock over `panelSlideOutDuration`, then invokes the instant
+    /// `close()` to order out and fire onClose. Used for user-
+    /// initiated dismissals — Escape, hotkey toggle, click-outside.
+    /// Paste paths (see AppDelegate.closePanel) must keep calling
+    /// `close()` directly because the previously-active app needs to
+    /// regain key focus before the 30 ms-later CGEvent ⌘V fires.
+    func closeAnimated() {
+        // Honor Reduce Motion, mirroring the open() path.
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            close()
+            return
+        }
+        guard isPresented else {
+            super.close()
+            return
+        }
+        // Already animating out — nothing to do.
+        if slideOutInFlight { return }
+        slideOutInFlight = true
+
+        let screen = self.screen ?? NSScreen.main
+        let visibleMinY = screen?.visibleFrame.minY ?? frame.minY
+        var targetFrame = frame
+        targetFrame.origin.y = visibleMinY - frame.height
+
+        // Stop mouse events mid-slide — the panel is visible but on
+        // its way out, and clicks / hovers landing on a disappearing
+        // panel are never what the user means.
+        ignoresMouseEvents = true
+
+        runSlide(from: frame, to: targetFrame, duration: panelSlideOutDuration) { [weak self] in
+            guard let self else { return }
+            self.slideOutInFlight = false
+            self.ignoresMouseEvents = false
+            // Instant teardown (orderOut + onClose callback).
+            self.close()
+        }
+    }
+
+    private func stopSlideOut() {
+        // Clear the re-entry flag, reset mouse events, and cancel any
+        // in-flight slide (slide-in or slide-out) so the next cycle
+        // starts clean.
+        slideOutInFlight = false
+        ignoresMouseEvents = false
+        stopSlide()
     }
 
     /// Intercept Return/Escape before they reach any SwiftUI text field.
@@ -334,15 +431,17 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
             }
             if handled { return }
 
-            // ⌥1–⌥9 → quick paste the Nth visible card, regardless of
+            // ⌥1–⌥9 → quick paste the Nth card counted from the current
+            // selection (selected = 1, next = 2, …), regardless of
             // whether the search field, the carousel, or neither has focus.
             if event.modifierFlags.contains(.option),
                !event.modifierFlags.contains(.command),
                let chars = event.charactersIgnoringModifiers,
                let digit = Int(chars), digit >= 1, digit <= 9 {
                 MainActor.assumeIsolated {
-                    AppState.shared.selectByIndex(digit - 1)
-                    AppState.shared.pasteSelected()
+                    if AppState.shared.selectByQuickPasteDigit(digit) {
+                        AppState.shared.pasteSelected()
+                    }
                 }
                 return
             }
@@ -359,7 +458,7 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
                     if AppState.shared.isMultiSelecting {
                         AppState.shared.clearMultiSelection()
                     } else {
-                        self.close()
+                        self.closeAnimated()
                     }
                 }
                 return
@@ -433,6 +532,7 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         // keyboard focus immediately. This is required for CGEvent ⌘V paste
         // to land in the target app rather than our now-closing panel.
         stopSlide()
+        stopSlideOut()
         isPresented = false
         super.close()
         onClose()
@@ -440,6 +540,20 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    /// AppKit's default implementation snaps window frames back into
+    /// the target screen's visibleFrame. Our slide-in intentionally
+    /// positions `startFrame` BELOW visibleFrame so the panel can
+    /// animate up from off-screen. On primary displays the default
+    /// constraint is lenient enough that the below-screen start
+    /// frame survives, but on secondary displays AppKit pulls it
+    /// back into view — which collapses the animation's start and
+    /// end frames to nearly the same position, so the slide reads
+    /// as a flash. Returning the frame unchanged preserves our
+    /// off-screen positioning on every display.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        return frameRect
+    }
 
     override func resignKey() {
         super.resignKey()
@@ -449,12 +563,12 @@ final class BottomPanel<Content: View>: NSPanel, NSWindowDelegate {
         // momentarily took key focus (closing would dealloc the drag
         // source view and break Esc-to-cancel).
         if isPresented && !isShowingPreview && !isDraggingOut {
-            close()
+            closeAnimated()
         }
     }
 
     override func cancelOperation(_ sender: Any?) {
-        close()
+        closeAnimated()
     }
 }
 
@@ -471,12 +585,16 @@ private extension NSScreen {
 private let panelMinHeight: CGFloat = 280
 private let panelMaxHeight: CGFloat = 640
 
-/// Slide-in duration. 0.24 s is fast enough that the panel feels
-/// responsive when the hotkey is fired mid-task, long enough that the
-/// eye reads the motion as a single smooth glide rather than a pop.
-/// File-level for the same reason panelMinHeight/Max are — BottomPanel
-/// is generic and generic types can't have static stored properties.
-private let panelSlideDuration: CFTimeInterval = 0.24
+/// Slide-in duration. On the native animator path the window server
+/// drives the interpolation vsync-locked, so shorter durations stay
+/// silky where a Timer would start to stutter. File-level for the
+/// same reason panelMinHeight/Max are — BottomPanel is generic and
+/// generic types can't have static stored properties.
+private let panelSlideDuration: CFTimeInterval = 0.42
+
+/// Slide-out duration. Shorter than the reveal so dismissals feel
+/// quicker.
+private let panelSlideOutDuration: CFTimeInterval = 0.3
 
 private extension CGFloat {
     func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
